@@ -4,48 +4,50 @@
  * Released under the MIT License.
  */
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('lodash')) :
-  typeof define === 'function' && define.amd ? define(['lodash'], factory) :
-  (global.VuexService = factory(global.lodash));
-}(this, (function (lodash) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('lodash'), require('vuex')) :
+  typeof define === 'function' && define.amd ? define(['lodash', 'vuex'], factory) :
+  (global.VuexService = factory(global._,global.Vuex));
+}(this, (function (_,Vuex) { 'use strict';
+
+_ = 'default' in _ ? _['default'] : _;
+Vuex = 'default' in Vuex ? Vuex['default'] : Vuex;
 
 // 1. 기본 mutation를 각 store 파일에 추가
-function addMutation(storeDir) {
+function addMutation(store) {
   var mutations = {
-    set: function set$1(state, ref) {
+    set: function set(state, ref) {
       var prop = ref.prop;
       var value = ref.value;
 
-      lodash.set(state, prop, value);
+      _.set(state, prop, value);
     },
     add: function add(state, ref) {
       var prop = ref.prop;
       var value = ref.value;
 
-      lodash.get(state, prop).push(value);
+      _.get(state, prop).push(value);
     },
     update: function update(state, ref) {
       var value = ref.value;
       var patch = ref.patch;
 
-      lodash.merge(value, patch);
+      _.merge(value, patch);
       delete value.__patch;
     },
     remove: function remove(state, ref) {
       var prop = ref.prop;
       var value = ref.value;
 
-      lodash.get(state, prop).splice(lodash.get(state, prop).indexOf(value), 1);
+      _.get(state, prop).splice(_.get(state, prop).indexOf(value), 1);
     }
   };
 
   function appendMutation(obj) {
-    lodash.merge(obj.mutations, mutations);
+    _.merge(obj.mutations, mutations);
     if (obj.modules) {
-      lodash.forEach(obj.modules, function (module) { return appendMutation(module); });
+      _.forEach(obj.modules, function (module) { return appendMutation(module); });
     }
   }
-  var store = require('~/store');
   appendMutation(store);
 }
 
@@ -59,25 +61,25 @@ function Store(name) {
   var getters = this.$store ? this.$store.getters : this.getters;
   var keys = Object.keys(getters);
   var regex = new RegExp('^' + name + '/');
-  lodash.chain(keys)
+  _(keys)
     .filter(function (key) { return regex.test(key); })
     .map(function (key) {
       var property = key.replace(regex, '').split('/').join('.');
-      lodash.set(service, property, getters[key]);
+      _.set(service, property, getters[key]);
     })
     .value();
 
   // actions
   var actions = this.$store ? this.$store._actions : this._actions;
   keys = Object.keys(actions);
-  lodash.chain(keys)
+  _(keys)
     .filter(function (key) { return regex.test(key); })
     .map(function (key) {
       var property = key.replace(regex, '').split('/').join('.');
-      var isExist = lodash.get(service, property);
+      var isExist = _.get(service, property);
       if (isExist) { throw new Error('duplicate key') }
       var self = this$1.$store ? this$1.$store : this$1;
-      lodash.set(service, property, function (payload, patch) {
+      _.set(service, property, function (payload, patch) {
         patch && (payload.__patch = patch);
         self.dispatch(key, payload);
       });
@@ -87,21 +89,21 @@ function Store(name) {
   // mutations
   var mutations = this.$store ? this.$store._mutations : this._mutations;
   keys = Object.keys(mutations);
-  lodash.chain(keys)
+  _(keys)
     .filter(function (key) { return regex.test(key); })
     .map(function (key) {
       var property = key.replace(regex, '').split('/').join('.');
       var self = this$1.$store ? this$1.$store : this$1;
-      lodash.set(service.m, property, function (prop, payload) {
+      _.set(service.m, property, function (prop, payload) {
         var data = {};
-        if (lodash.isString(prop) && !lodash.isUndefined(payload)) {
+        if (_.isString(prop) && !_.isUndefined(payload)) {
           // string any
           data.prop = prop;
           data.value = payload;
         } else if (!payload) {
           // any
           data = prop;
-        } else if (lodash.isObject(prop) && lodash.isObject(payload)) {
+        } else if (_.isObject(prop) && _.isObject(payload)) {
           // obj obj
           data.value = prop;
           data.patch = payload;
@@ -123,18 +125,28 @@ function Store(name) {
 function plugin (Vue, options) {
   if ( options === void 0 ) options = {};
 
-  var storeDir = options.store || './store';
+  var store = options.store;
   var flgMutation = options.mutation || true;
 
-  flgMutation && addMutation(storeDir);
-  Vue.prototype.$$store = Store;
+  if (!store) {
+    throw new Error('Not defined store')
+  }
+
+  flgMutation && addMutation(store);
+  // Vue.prototype.$Store = Store
+  // Vuex.Store.prototype.$$store = Store
+  var key = '$$store';
+  if (!Vue.prototype.hasOwnProperty(key)) {
+    Object.defineProperty(Vue.prototype, key, {
+      get: function get () {
+        return Store
+      }
+    });
+    Vuex.Store.prototype[key] = Store;
+  }
 }
 
 plugin.version = '0.1.0';
-
-if (typeof window !== 'undefined' && window.Vue) {
-  window.Vue.use(plugin);
-}
 
 return plugin;
 

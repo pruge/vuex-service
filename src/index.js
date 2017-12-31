@@ -1,39 +1,30 @@
-import {
-  set,
-  get,
-  merge,
-  chain,
-  forEach,
-  isString,
-  isUndefined,
-  isObject
-} from 'lodash'
+import _ from 'lodash'
+import Vuex from 'vuex'
 
 // 1. 기본 mutation를 각 store 파일에 추가
-function addMutation(storeDir) {
+function addMutation(store) {
   const mutations = {
     set(state, { prop, value }) {
-      set(state, prop, value)
+      _.set(state, prop, value)
     },
     add(state, { prop, value }) {
-      get(state, prop).push(value)
+      _.get(state, prop).push(value)
     },
     update(state, { value, patch }) {
-      merge(value, patch)
+      _.merge(value, patch)
       delete value.__patch
     },
     remove(state, { prop, value }) {
-      get(state, prop).splice(get(state, prop).indexOf(value), 1)
+      _.get(state, prop).splice(_.get(state, prop).indexOf(value), 1)
     }
   }
 
   function appendMutation(obj) {
-    merge(obj.mutations, mutations)
+    _.merge(obj.mutations, mutations)
     if (obj.modules) {
-      forEach(obj.modules, (module) => appendMutation(module))
+      _.forEach(obj.modules, (module) => appendMutation(module))
     }
   }
-  const store = require('~/store')
   appendMutation(store)
 }
 
@@ -45,25 +36,25 @@ function Store(name) {
   const getters = this.$store ? this.$store.getters : this.getters
   let keys = Object.keys(getters)
   const regex = new RegExp('^' + name + '/')
-  chain(keys)
+  _(keys)
     .filter(key => regex.test(key))
     .map(key => {
       const property = key.replace(regex, '').split('/').join('.')
-      set(service, property, getters[key])
+      _.set(service, property, getters[key])
     })
     .value()
 
   // actions
   const actions = this.$store ? this.$store._actions : this._actions
   keys = Object.keys(actions)
-  chain(keys)
+  _(keys)
     .filter(key => regex.test(key))
     .map(key => {
       const property = key.replace(regex, '').split('/').join('.')
-      const isExist = get(service, property)
+      const isExist = _.get(service, property)
       if (isExist) throw new Error('duplicate key')
       const self = this.$store ? this.$store : this
-      set(service, property, (payload, patch) => {
+      _.set(service, property, (payload, patch) => {
         patch && (payload.__patch = patch)
         self.dispatch(key, payload)
       })
@@ -73,21 +64,21 @@ function Store(name) {
   // mutations
   const mutations = this.$store ? this.$store._mutations : this._mutations
   keys = Object.keys(mutations)
-  chain(keys)
+  _(keys)
     .filter(key => regex.test(key))
     .map(key => {
       const property = key.replace(regex, '').split('/').join('.')
       const self = this.$store ? this.$store : this
-      set(service.m, property, (prop, payload) => {
+      _.set(service.m, property, (prop, payload) => {
         let data = {}
-        if (isString(prop) && !isUndefined(payload)) {
+        if (_.isString(prop) && !_.isUndefined(payload)) {
           // string any
           data.prop = prop
           data.value = payload
         } else if (!payload) {
           // any
           data = prop
-        } else if (isObject(prop) && isObject(payload)) {
+        } else if (_.isObject(prop) && _.isObject(payload)) {
           // obj obj
           data.value = prop
           data.patch = payload
@@ -107,17 +98,25 @@ function Store(name) {
 
 /* @flow */
 function plugin (Vue, options = {}) {
-  const storeDir = options.store || './store'
+  const store = options.store
   const flgMutation = options.mutation || true
 
-  flgMutation && addMutation(storeDir)
-  Vue.prototype.$$store = Store
+  if (!store) {
+    throw new Error('Not defined store')
+  }
+
+  flgMutation && addMutation(store)
+  const key = '$$store'
+  if (!Vue.prototype.hasOwnProperty(key)) {
+    Object.defineProperty(Vue.prototype, key, {
+      get () {
+        return Store
+      }
+    })
+    Vuex.Store.prototype[key] = Store
+  }
 }
 
 plugin.version = '__VERSION__'
 
 export default plugin
-
-if (typeof window !== 'undefined' && window.Vue) {
-  window.Vue.use(plugin)
-}
