@@ -13,7 +13,7 @@ function getters(service, self, name) {
     .value()
 }
 
-function mutations(service, self, name) {
+function actions(service, self, name) {
   const actions = self.$store ? self.$store._actions : self._actions
   const keys = Object.keys(actions)
   const regex = new RegExp('^' + name + '/')
@@ -32,7 +32,7 @@ function mutations(service, self, name) {
     .value()
 }
 
-function actions(service, self, name) {
+function mutations(service, self, name) {
   const mutations = self.$store ? self.$store._mutations : self._mutations
   const keys = Object.keys(mutations)
   const regex = new RegExp('^' + name + '/')
@@ -54,8 +54,8 @@ function actions(service, self, name) {
           data = prop
         } else if (_.isObject(prop) && _.isObject(payload)) {
           // obj obj
-          data.value = prop
-          data.patch = payload
+          data.prop = prop
+          data.value = payload
         } else {
           throw new Error('Incorrect arguements.')
         }

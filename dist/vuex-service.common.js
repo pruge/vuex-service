@@ -24,14 +24,14 @@ var mutations = {
     _.get(state, prop).push(value);
   },
   update: function update(state, ref) {
+    var prop = ref.prop;
     var value = ref.value;
-    var patch = ref.patch;
 
-    if (_.isString(value)) {
-      _.set(state, value, patch);
+    if (_.isString(prop)) {
+      _.set(state, prop, value);
     } else {
-      _.merge(value, patch);
-      delete value.__patch;
+      _.merge(prop, value);
+      delete prop.__patch;
     }
   },
   remove: function remove(state, ref) {
@@ -62,7 +62,7 @@ function getters(service, self, name) {
     .value();
 }
 
-function mutations$1(service, self, name) {
+function actions(service, self, name) {
   var actions = self.$store ? self.$store._actions : self._actions;
   var keys = Object.keys(actions);
   var regex = new RegExp('^' + name + '/');
@@ -81,7 +81,7 @@ function mutations$1(service, self, name) {
     .value();
 }
 
-function actions(service, self, name) {
+function mutations$1(service, self, name) {
   var mutations = self.$store ? self.$store._mutations : self._mutations;
   var keys = Object.keys(mutations);
   var regex = new RegExp('^' + name + '/');
@@ -103,8 +103,8 @@ function actions(service, self, name) {
           data = prop;
         } else if (_.isObject(prop) && _.isObject(payload)) {
           // obj obj
-          data.value = prop;
-          data.patch = payload;
+          data.prop = prop;
+          data.value = payload;
         } else {
           throw new Error('Incorrect arguements.')
         }

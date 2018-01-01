@@ -7,12 +7,12 @@ const mutations = {
   add(state, { prop, value }) {
     _.get(state, prop).push(value)
   },
-  update(state, { value, patch }) {
-    if (_.isString(value)) {
-      _.set(state, value, patch)
+  update(state, { prop, value }) {
+    if (_.isString(prop)) {
+      _.set(state, prop, value)
     } else {
-      _.merge(value, patch)
-      delete value.__patch
+      _.merge(prop, value)
+      delete prop.__patch
     }
   },
   remove(state, { prop, value }) {
