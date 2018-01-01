@@ -4,132 +4,154 @@
  * Released under the MIT License.
  */
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('lodash'), require('vuex'), require('addMutation'), require('makeStoreService')) :
-  typeof define === 'function' && define.amd ? define(['lodash', 'vuex', 'addMutation', 'makeStoreService'], factory) :
-  (global.VuexService = factory(global.lodash,global.Vuex,global.addMutation,global.makeStoreService));
-}(this, (function (lodash,Vuex,addMutation,makeStoreService) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('vuex'), require('lodash')) :
+  typeof define === 'function' && define.amd ? define(['vuex', 'lodash'], factory) :
+  (global.VuexService = factory(global.Vuex,global._));
+}(this, (function (Vuex,_) { 'use strict';
 
 Vuex = 'default' in Vuex ? Vuex['default'] : Vuex;
-addMutation = 'default' in addMutation ? addMutation['default'] : addMutation;
-makeStoreService = 'default' in makeStoreService ? makeStoreService['default'] : makeStoreService;
+_ = 'default' in _ ? _['default'] : _;
 
-// // 1. 기본 mutation를 각 store 파일에 추가
-// function addMutation(store) {
-//   const mutations = {
-//     set(state, { prop, value }) {
-//       _.set(state, prop, value)
-//     },
-//     add(state, { prop, value }) {
-//       _.get(state, prop).push(value)
-//     },
-//     update(state, { value, patch }) {
-//       _.merge(value, patch)
-//       delete value.__patch
-//     },
-//     remove(state, { prop, value }) {
-//       _.get(state, prop).splice(_.get(state, prop).indexOf(value), 1)
-//     }
-//   }
+var mutations = {
+  set: function set(state, ref) {
+    var prop = ref.prop;
+    var value = ref.value;
 
-//   function appendMutation(obj) {
-//     _.set(obj, 'mutations', _.merge(obj.mutations, mutations))
-//     if (obj.modules) {
-//       _.forEach(obj.modules, (module) => appendMutation(module))
-//     }
-//   }
-//   appendMutation(store)
-// }
+    _.set(state, prop, value);
+  },
+  add: function add(state, ref) {
+    var prop = ref.prop;
+    var value = ref.value;
 
-// 2. store를 service 객체 처럼 변환
-// function Store(name) {
-//   let service = {}
-//   const that = this
-//   // getters
-//   // console.log(this.$store)
-//   const getters = this.$store ? this.$store.getters : this.getters
-//   let keys = Object.keys(getters)
-//   const regex = new RegExp('^' + name + '/')
-//   _(keys)
-//     .filter(key => regex.test(key))
-//     .map(key => {
-//       const property = key.replace(regex, '').split('/').join('.')
-//       _.set(service, property, getters[key])
-//     })
-//     .value()
+    _.get(state, prop).push(value);
+  },
+  update: function update(state, ref) {
+    var value = ref.value;
+    var patch = ref.patch;
 
-//   // actions
-//   const actions = this.$store ? this.$store._actions : this._actions
-//   keys = Object.keys(actions)
-//   _(keys)
-//     .filter(key => regex.test(key))
-//     .map(key => {
-//       const property = key.replace(regex, '').split('/').join('.')
-//       const isExist = _.get(service, property)
-//       if (isExist) throw new Error('duplicate key')
-//       const self = that.$store ? that.$store : that
-//       _.set(service, property, (payload, patch) => {
-//         patch && (payload.__patch = patch)
-//         self.dispatch(key, payload)
-//       })
-//     })
-//     .value()
+    if (_.isString(value)) {
+      _.set(state, value, patch);
+    } else {
+      _.merge(value, patch);
+      delete value.__patch;
+    }
+  },
+  remove: function remove(state, ref) {
+    var prop = ref.prop;
+    var value = ref.value;
 
-//   // mutations
-//   const mutations = this.$store ? this.$store._mutations : this._mutations
-//   keys = Object.keys(mutations)
-//   _(keys)
-//     .filter(key => regex.test(key))
-//     .map(key => {
-//       const props = key.replace(regex, '').split('/')
-//       props.splice(props.length - 1, 0, 'm')
-//       const property = props.join('.')
-//       const self = that.$store ? that.$store : that
-//       _.set(service, property, (prop, payload) => {
-//         let data = {}
-//         if (_.isString(prop) && !_.isUndefined(payload)) {
-//           // string any
-//           data.prop = prop
-//           data.value = payload
-//         } else if (!payload) {
-//           // any
-//           data = prop
-//         } else if (_.isObject(prop) && _.isObject(payload)) {
-//           // obj obj
-//           data.value = prop
-//           data.patch = payload
-//         } else {
-//           throw new Error('Incorrect arguements.')
-//         }
+    _.get(state, prop).splice(_.get(state, prop).indexOf(value), 1);
+  }
+};
 
-//         // console.log(property, prop, payload, data)
-//         self.commit(key, data)
-//       })
-//     })
-//     .value()
+function addMutation(store) {
+  _.set(store, 'mutations', _.merge(store.mutations, mutations));
+  if (store.modules) {
+    _.forEach(store.modules, function (module) { return addMutation(module); });
+  }
+}
 
-//   // state
-//   const state = this.$store ? this.$store.state : this.state;
-//   const key = name.split('/').join('.')
-//   exportState(state, key, service)
-//   function exportState(state, key, service) {
-//     const keys = Object.keys(_.get(state, key));
-//     _(keys)
-//       .map(function (prop) {
-//         if (!_.get(service, prop)) {
-//           _.set(service, prop, _.get(state, key + '.' + prop))
-//         } else {
-//           exportState(_.get(state, key), prop, service[prop])
-//         }
-//       })
-//       .value();
-//   }
+function getters(service, self, name) {
+  var getters = self.$store ? self.$store.getters : self.getters;
+  var keys = Object.keys(getters);
+  var regex = new RegExp('^' + name + '/');
+  _(keys)
+    .filter(function (key) { return regex.test(key); })
+    .map(function (key) {
+      var property = key.replace(regex, '').split('/').join('.');
+      _.set(service, property, getters[key]);
+    })
+    .value();
+}
 
+function mutations$1(service, self, name) {
+  var actions = self.$store ? self.$store._actions : self._actions;
+  var keys = Object.keys(actions);
+  var regex = new RegExp('^' + name + '/');
+  _(keys)
+    .filter(function (key) { return regex.test(key); })
+    .map(function (key) {
+      var property = key.replace(regex, '').split('/').join('.');
+      var isExist = _.get(service, property);
+      if (isExist) { throw new Error('duplicate key') }
+      var that = self.$store ? self.$store : self;
+      _.set(service, property, function (payload, patch) {
+        patch && (payload.__patch = patch);
+        that.dispatch(key, payload);
+      });
+    })
+    .value();
+}
 
-//   // console.log(service)
-//   return service
-// }
+function actions(service, self, name) {
+  var mutations = self.$store ? self.$store._mutations : self._mutations;
+  var keys = Object.keys(mutations);
+  var regex = new RegExp('^' + name + '/');
+  _(keys)
+    .filter(function (key) { return regex.test(key); })
+    .map(function (key) {
+      var props = key.replace(regex, '').split('/');
+      props.splice(props.length - 1, 0, 'm');
+      var property = props.join('.');
+      var that = self.$store ? self.$store : self;
+      _.set(service, property, function (prop, payload) {
+        var data = {};
+        if (_.isString(prop) && !_.isUndefined(payload)) {
+          // string any
+          data.prop = prop;
+          data.value = payload;
+        } else if (!payload) {
+          // any
+          data = prop;
+        } else if (_.isObject(prop) && _.isObject(payload)) {
+          // obj obj
+          data.value = prop;
+          data.patch = payload;
+        } else {
+          throw new Error('Incorrect arguements.')
+        }
 
-/*  */
+        that.commit(key, data);
+      });
+    })
+    .value();
+}
+
+function state(service, self, name) {
+  var state = self.$store ? self.$store.state : self.state;
+  var key = name.split('/').join('.');
+  exportState(state, key, service);
+}
+
+function exportState(state, key, service) {
+  var keys = Object.keys(_.get(state, key));
+  _(keys)
+    .map(function (prop) {
+      if (!_.get(service, prop)) {
+        _.set(service, prop, _.get(state, key + '.' + prop));
+      } else {
+        exportState(_.get(state, key), prop, service[prop]);
+      }
+    })
+    .value();
+}
+
+var cache = {};
+
+function Store(name) {
+  if (cache[name]) {
+    getters(cache[name], this, name);
+    return cache[name]
+  }
+  var service = {};
+  getters(service, this, name);
+  actions(service, this, name);
+  mutations$1(service, this, name);
+  state(service, this, name);
+  cache[name] = service;
+  return service
+}
+
 function plugin (Vue, options) {
   if ( options === void 0 ) options = {};
 
@@ -145,10 +167,10 @@ function plugin (Vue, options) {
   if (!Vue.prototype.hasOwnProperty(key)) {
     Object.defineProperty(Vue.prototype, key, {
       get: function get () {
-        return makeStoreService
+        return Store
       }
     });
-    Vuex.Store.prototype[key] = makeStoreService;
+    Vuex.Store.prototype[key] = Store;
   }
 }
 
