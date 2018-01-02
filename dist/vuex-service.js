@@ -1,5 +1,5 @@
 /*!
- * vuex-service v0.1.0 
+ * vuex-service v0.1.2 
  * (c) 2018 james kim
  * Released under the MIT License.
  */
@@ -55,13 +55,13 @@ function getters(service, self, name) {
   var getters = self.$store ? self.$store.getters : self.getters;
   var keys = Object.keys(getters);
   var regex = new RegExp('^' + name + '/');
-  service.getters = getters; // getters  변경 이력을 추적하기위해 부모까지 포함
+  service.__getters = getters; // getters  변경 이력을 추적하기위해 부모까지 포함
   _(keys)
     .filter(function (key) { return regex.test(key); })
     .map(function (key) {
       var property = key.replace(regex, '').split('/').join('.');
       // _.set(service, property, getters[key])
-      Object.defineProperty(service, property, { get: function () { return this.getters[key] } });
+      Object.defineProperty(service, property, { get: function () { return this.__getters[key] } });
     })
     .value();
 }
@@ -128,7 +128,7 @@ function mutations(service, self, name) {
 function state(service, self, name) {
   var state = self.$store ? self.$store.state : self.state;
   var key = name.split('/').join('.');
-  service.state = _.get(state, key); // state  변경 이력을 추적하기위해 부모까지 포함
+  service.__state = _.get(state, key); // state  변경 이력을 추적하기위해 부모까지 포함
   exportState(state, key, service);
 }
 
@@ -138,7 +138,7 @@ function exportState(state, key, service) {
     .map(function (prop) {
       if (!_.get(service, prop)) {
         // _.set(service, prop, _.get(state, key + '.' + prop))
-        Object.defineProperty(service, prop, { get: function () { return this.state[prop] } });
+        Object.defineProperty(service, prop, { get: function () { return this.__state[prop] } });
       } else {
         exportState(_.get(state, key), prop, service[prop]);
       }
@@ -185,7 +185,7 @@ function plugin (Vue, options) {
   }
 }
 
-plugin.version = '0.1.0';
+plugin.version = '0.1.2';
 
 exports['default'] = plugin;
 exports.Store = Store;
