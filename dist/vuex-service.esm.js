@@ -1,5 +1,5 @@
 /*!
- * vuex-service v0.1.2 
+ * vuex-service v0.1.4 
  * (c) 2018 james kim
  * Released under the MIT License.
  */
@@ -27,7 +27,6 @@ var defaultMutations = {
       _.set(state, prop, value);
     } else {
       _.merge(prop, value);
-      delete prop.__patch;
     }
   },
   remove: function remove(state, ref) {
@@ -71,12 +70,13 @@ function actions(service, self, name) {
       var isExist = _.get(service, property);
       if (isExist) { throw new Error('duplicate key') }
       var that = self.$store ? self.$store : self;
-      _.set(service, property, function (payload, patch) {
+      _.set(service, property, function (payload, value) {
         var data = payload;
-        if (patch) {
+        if (!_.isUndefined(value)) {
           data = {
+            prop: payload,
             src: payload,
-            patch: patch
+            value: value
           };
         }
         that.dispatch(key, data);
@@ -96,22 +96,30 @@ function mutations(service, self, name) {
       props.splice(props.length - 1, 0, 'm');
       var property = props.join('.');
       var that = self.$store ? self.$store : self;
-      _.set(service, property, function (prop, payload) {
+      _.set(service, property, function (prop, value) {
         var data = {};
-        if (_.isString(prop) && !_.isUndefined(payload)) {
-          // string any
-          data.prop = prop;
-          data.value = payload;
-        } else if (!payload) {
-          // any
+        if (_.isUndefined(value)) {
           data = prop;
-        } else if (_.isObject(prop) && _.isObject(payload)) {
-          // obj obj
-          data.prop = prop;
-          data.value = payload;
         } else {
-          throw new Error('Incorrect arguements.')
+          data.prop = prop;
+          data.src = prop;
+          data.value = value;
         }
+
+        // if (_.isString(prop) && !_.isUndefined(payload)) {
+        //   // string any
+        //   data.prop = prop
+        //   data.value = payload
+        // } else if (!payload) {
+        //   // any
+        //   data = prop
+        // } else if (_.isObject(prop) && _.isObject(payload)) {
+        //   // obj obj
+        //   data.prop = prop
+        //   data.value = payload
+        // } else {
+        //   throw new Error('Incorrect arguements.')
+        // }
 
         that.commit(key, data);
       });
@@ -179,6 +187,6 @@ function plugin (Vue, options) {
   }
 }
 
-plugin.version = '0.1.2';
+plugin.version = '0.1.4';
 
 export { Store };export default plugin;

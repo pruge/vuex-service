@@ -12,7 +12,6 @@ const defaultMutations = {
       _.set(state, prop, value)
     } else {
       _.merge(prop, value)
-      delete prop.__patch
     }
   },
   remove(state, { prop, value }) {

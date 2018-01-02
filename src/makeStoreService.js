@@ -26,12 +26,13 @@ function actions(service, self, name) {
       const isExist = _.get(service, property)
       if (isExist) throw new Error('duplicate key')
       const that = self.$store ? self.$store : self
-      _.set(service, property, (payload, patch) => {
+      _.set(service, property, (payload, value) => {
         let data = payload
-        if (patch) {
+        if (!_.isUndefined(value)) {
           data = {
+            prop: payload,
             src: payload,
-            patch: patch
+            value: value
           }
         }
         that.dispatch(key, data)
@@ -51,22 +52,30 @@ function mutations(service, self, name) {
       props.splice(props.length - 1, 0, 'm')
       const property = props.join('.')
       const that = self.$store ? self.$store : self
-      _.set(service, property, (prop, payload) => {
+      _.set(service, property, (prop, value) => {
         let data = {}
-        if (_.isString(prop) && !_.isUndefined(payload)) {
-          // string any
-          data.prop = prop
-          data.value = payload
-        } else if (!payload) {
-          // any
-          data = prop
-        } else if (_.isObject(prop) && _.isObject(payload)) {
-          // obj obj
-          data.prop = prop
-          data.value = payload
+        if (_.isUndefined(value)) {
+          data = prop;
         } else {
-          throw new Error('Incorrect arguements.')
+          data.prop = prop;
+          data.src = prop;
+          data.value = value;
         }
+
+        // if (_.isString(prop) && !_.isUndefined(payload)) {
+        //   // string any
+        //   data.prop = prop
+        //   data.value = payload
+        // } else if (!payload) {
+        //   // any
+        //   data = prop
+        // } else if (_.isObject(prop) && _.isObject(payload)) {
+        //   // obj obj
+        //   data.prop = prop
+        //   data.value = payload
+        // } else {
+        //   throw new Error('Incorrect arguements.')
+        // }
 
         that.commit(key, data)
       })

@@ -60,7 +60,7 @@ export const mutations = {
     state.todos.push(todo)
   },
   UPDATE_TODO (state, data) {
-    _.merge(data.src, data.patch)
+    _.merge(data.src, data.value)
   }
 }
 
@@ -85,7 +85,7 @@ export const actions = {
   update ({ commit }, data) {
     const Todo = this.$$store('Todo')
     // commit('UPDATE_TODO', data)
-    Todo.m.update(data.src, data.patch)
+    Todo.m.update(data.src, data.value)
   }
 }
 ```
@@ -104,10 +104,10 @@ export default {
   methods: {
     doneCheck (todo, e) {
       const Todo = this.$$store('Todo')
-      const data = {src: todo, patch: {completed: e.target.checked}}
+      const data = {src: todo, value: {completed: e.target.checked}}
       Todo.update(data) // this.dispatch('Todo/update', data)
       // or
-      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('Todo/update', {src: todo, patch: {completed: e.target.checked})
+      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('Todo/update', {src: todo, value: {completed: e.target.checked})
       // or
       Todo.m.update(todo, { completed: e.target.checked })
     },
@@ -167,10 +167,10 @@ Todo.m.add('todos', {title: 'todo', completed: false})
 const todo = Todo.todos[0]
 Todo.m.remove('todos', todo) // []
 ```
-4. update (src, patch)
+4. update (src, value)
 ```js
 const Todo = this.$$store('Todo')
-// Todo.m.update(src, patch)
+// Todo.m.update(src, value)
 // if src is string, call m.set(prop, value)
 Todo.m.update('todos', {title: 'todo', completed: false})
 Todo.m.update('hello.heart', 'one') // [one]
@@ -181,9 +181,10 @@ const todo = Todo.todos[0]
 Todo.m.update(todo, {title: 'hello world'}) // 'hi' --> 'hello world'
 ```
 
-### When you call custom action
+### When you call custom action/mutations
 - If two parameters
-- Todo.update(arg1, arg2) === this.$store.dispatch('Todo/update', {src: arg1, patch: arg2})
+- Todo.update(arg1, arg2) === this.$store.dispatch('Todo/update', {src: arg1, prop: arg1, value: arg2})
+- Todo.m.update(arg1, arg2) === this.$store.commit('Todo/update', {src: arg1, prop: arg1, value: arg2})
 ```js
 // ~/store/Todo.js
 export const state = () => ({
@@ -198,7 +199,7 @@ export const actions = {
   update ({ commit }, data) {
     const Todo = this.$$store('Todo')
     // commit('UPDATE_TODO', data)
-    Todo.m.update(data.src, data.patch)
+    Todo.m.update(data.src, data.value)
   }
 }
 ```
@@ -208,10 +209,10 @@ export default {
   methods {
     doneCheck (todo, e) {
       const Todo = this.$$store('Todo')
-      const data = {src: todo, patch: {completed: e.target.checked}}
+      const data = {src: todo, value: {completed: e.target.checked}}
       Todo.update(data) // this.dispatch('Todo/update', data)
       // or
-      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('Todo/update', {src: todo, patch: {completed: e.target.checked})
+      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('Todo/update', {src: todo, value: {completed: e.target.checked})
     }
   }
 }
