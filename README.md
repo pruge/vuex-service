@@ -31,12 +31,12 @@ Vue.use(vuexService, {store: store, mutation: true})
 ```
 
 ## options
-1. store: store 객체
-1. mutation: if true, add mutation (add, remove, udpate, set), default: false
+1. store: Vuex Store instance
+1. mutation: if true, add mutations 'add, remove, udpate, set', default: fase
 
 ## how to use
 
-### store actions에서 사용
+### store actions
 ```js
 // ~/store/Todo.js
 export const state = () => ({
@@ -81,7 +81,7 @@ export const actions = {
 }
 ```
 
-### vue component에서 사용
+### vue component
 ```js
 export default {
   computed: {
@@ -96,9 +96,9 @@ export default {
     doneCheck (todo, e) {
       const Todo = this.$$store('Todo')
       const data = {src: todo, patch: {completed: e.target.checked}}
-      Todo.update(data) // this.dispatch('update', data)
+      Todo.update(data) // this.dispatch('Todo/update', data)
       // or
-      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('update', {src: todo, patch: {completed: e.target.checked})
+      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('Todo/update', {src: todo, patch: {completed: e.target.checked})
       // or
       Todo.m.update(todo, { completed: e.target.checked })
     },
@@ -106,7 +106,7 @@ export default {
 }
 ```
 
-### store 객체사용해서
+### vuex store instance
 ```js
 // ~/store/Locale.js
 export const state = () => ({
@@ -123,7 +123,7 @@ export default function ({ isHMR, app, store, route, params, error, redirect }) 
 }
 ```
 
-### 기본 제공 mutations - set, add, remove, update
+### default mutations - set, add, remove, update
 ```js
 // ~/store/Todo.js
 export const state = () => ({
@@ -134,7 +134,7 @@ export const state = () => ({
   }
 })
 ```
-1. set
+1. set (prop, value)
 ```js
 const Todo = this.$$store('Todo')
 // Todo.m.set(prop, value)
@@ -142,7 +142,7 @@ Todo.m.set('todos', [{title: 'todo', completed: false}])
 Todo.m.set('hello.world', 'abc') // abc
 Todo.m.set('hello.heart', ['two', 'three']) // [two, three]
 ```
-2. add
+2. add (prop, value)
 ```js
 const Todo = this.$$store('Todo')
 // Todo.m.add(prop, value)
@@ -150,7 +150,7 @@ Todo.m.add('todos', {title: 'todo', completed: false})
 Todo.m.add('hello.heart', 'one') // [one]
 Todo.m.add('hello.heart', ...['two', 'three']) // [one, two, three]
 ```
-3. remove
+3. remove (prop, value)
 ```js
 const Todo = this.$$store('Todo')
 // Todo.m.remove(prop, value)
@@ -158,11 +158,11 @@ Todo.m.add('todos', {title: 'todo', completed: false})
 const todo = Todo.todos[0]
 Todo.m.remove('todos', todo) // []
 ```
-4. update
+4. update (src, patch)
 ```js
 const Todo = this.$$store('Todo')
-// Todo.m.update(prop, value)
-// if prop is string, call m.set(prop, value)
+// Todo.m.update(src, patch)
+// if src is string, call m.set(prop, value)
 Todo.m.update('todos', {title: 'todo', completed: false})
 Todo.m.update('hello.heart', 'one') // [one]
 Todo.m.update('hello.heart', ['two', 'three'])  // [two, three]
@@ -172,8 +172,9 @@ const todo = Todo.todos[0]
 Todo.m.update(todo, {title: 'hello world'}) // 'hi' --> 'hello world'
 ```
 
-### action을 호출할 때
-- 2개 파리미터이면 {src: arg1, patch: arg2} 로 자동 구성
+### When you call custom action
+- If two parameters
+- Todo.update(arg1, arg2) === this.$store.dispatch('Todo/update', {src: arg1, patch: arg2})
 ```js
 // ~/store/Todo.js
 export const state = () => ({
@@ -183,6 +184,14 @@ export const state = () => ({
     heart: []
   }
 })
+
+export const actions = {
+  update ({ commit }, data) {
+    const Todo = this.$$store('Todo')
+    // commit('UPDATE_TODO', data)
+    Todo.m.update(data.src, data.patch)
+  }
+}
 ```
 ```js
 // ~/components/list.vue
@@ -191,9 +200,9 @@ export default {
     doneCheck (todo, e) {
       const Todo = this.$$store('Todo')
       const data = {src: todo, patch: {completed: e.target.checked}}
-      Todo.update(data) // this.dispatch('update', data)
+      Todo.update(data) // this.dispatch('Todo/update', data)
       // or
-      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('update', {src: todo, patch: {completed: e.target.checked})
+      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('Todo/update', {src: todo, patch: {completed: e.target.checked})
     }
   }
 }

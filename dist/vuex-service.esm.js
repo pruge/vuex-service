@@ -161,7 +161,7 @@ function plugin (Vue, options) {
   if ( options === void 0 ) options = {};
 
   var store = options.store;
-  var flgMutation = options.mutation || true;
+  var flgMutation = options.mutation || false;
 
   if (!store) {
     throw new Error('Not defined store')

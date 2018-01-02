@@ -4,7 +4,7 @@ import Store from './makeStoreService'
 
 function plugin (Vue, options = {}) {
   const store = options.store
-  const flgMutation = options.mutation || true
+  const flgMutation = options.mutation || false
 
   if (!store) {
     throw new Error('Not defined store')
