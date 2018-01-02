@@ -4,11 +4,13 @@ function getters(service, self, name) {
   const getters = self.$store ? self.$store.getters : self.getters
   const keys = Object.keys(getters)
   const regex = new RegExp('^' + name + '/')
+  service.getters = getters // getters  변경 이력을 추적하기위해 부모까지 포함
   _(keys)
     .filter(key => regex.test(key))
     .map(key => {
       const property = key.replace(regex, '').split('/').join('.')
-      _.set(service, property, getters[key])
+      // _.set(service, property, getters[key])
+      Object.defineProperty(service, property, { get: function () { return this.getters[key] } })
     })
     .value()
 }
@@ -69,6 +71,7 @@ function mutations(service, self, name) {
 function state(service, self, name) {
   const state = self.$store ? self.$store.state : self.state;
   const key = name.split('/').join('.')
+  service.state = _.get(state, key) // state  변경 이력을 추적하기위해 부모까지 포함
   exportState(state, key, service)
 }
 
@@ -77,7 +80,8 @@ function exportState(state, key, service) {
   _(keys)
     .map(function (prop) {
       if (!_.get(service, prop)) {
-        _.set(service, prop, _.get(state, key + '.' + prop))
+        // _.set(service, prop, _.get(state, key + '.' + prop))
+        Object.defineProperty(service, prop, { get: function () { return this.state[prop] } })
       } else {
         exportState(_.get(state, key), prop, service[prop])
       }
@@ -86,17 +90,18 @@ function exportState(state, key, service) {
 }
 
 let cache = {}
-
-export default function Store(name) {
+export default function Store(name, store) {
   if (cache[name]) {
-    getters(cache[name], this, name)
     return cache[name]
   }
+
+  let ref = this
+  if (store) { ref = store }
   let service = {}
-  getters(service, this, name)
-  actions(service, this, name)
-  mutations(service, this, name)
-  state(service, this, name)
+  getters(service, ref, name)
+  actions(service, ref, name)
+  mutations(service, ref, name)
+  state(service, ref, name)
   cache[name] = service
   return service
 }

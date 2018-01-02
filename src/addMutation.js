@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-const mutations = {
+const defaultMutations = {
   set(state, { prop, value }) {
     _.set(state, prop, value)
   },
@@ -21,7 +21,7 @@ const mutations = {
 }
 
 export default function addMutation(store) {
-  _.set(store, 'mutations', _.merge(store.mutations, mutations))
+  _.set(store, 'mutations', _.merge(store.mutations, defaultMutations))
   if (store.modules) {
     _.forEach(store.modules, (module) => addMutation(module))
   }

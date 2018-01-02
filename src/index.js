@@ -1,6 +1,6 @@
 import Vuex from 'vuex'
 import addMutation from './addMutation'
-import makeStoreService from './makeStoreService'
+import Store from './makeStoreService'
 
 function plugin (Vue, options = {}) {
   const store = options.store
@@ -15,13 +15,14 @@ function plugin (Vue, options = {}) {
   if (!Vue.prototype.hasOwnProperty(key)) {
     Object.defineProperty(Vue.prototype, key, {
       get () {
-        return makeStoreService
+        return Store
       }
     })
-    Vuex.Store.prototype[key] = makeStoreService
+    Vuex.Store.prototype[key] = Store
   }
 }
 
 plugin.version = '__VERSION__'
 
 export default plugin
+export { Store }

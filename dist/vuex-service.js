@@ -4,15 +4,15 @@
  * Released under the MIT License.
  */
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('vuex'), require('lodash')) :
-  typeof define === 'function' && define.amd ? define(['vuex', 'lodash'], factory) :
-  (global.VuexService = factory(global.Vuex,global._));
-}(this, (function (Vuex,_) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('vuex'), require('lodash')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'vuex', 'lodash'], factory) :
+  (factory((global.VuexService = global.VuexService || {}),global.Vuex,global._));
+}(this, (function (exports,Vuex,_) { 'use strict';
 
 Vuex = 'default' in Vuex ? Vuex['default'] : Vuex;
 _ = 'default' in _ ? _['default'] : _;
 
-var mutations = {
+var defaultMutations = {
   set: function set(state, ref) {
     var prop = ref.prop;
     var value = ref.value;
@@ -45,7 +45,7 @@ var mutations = {
 };
 
 function addMutation(store) {
-  _.set(store, 'mutations', _.merge(store.mutations, mutations));
+  _.set(store, 'mutations', _.merge(store.mutations, defaultMutations));
   if (store.modules) {
     _.forEach(store.modules, function (module) { return addMutation(module); });
   }
@@ -55,11 +55,13 @@ function getters(service, self, name) {
   var getters = self.$store ? self.$store.getters : self.getters;
   var keys = Object.keys(getters);
   var regex = new RegExp('^' + name + '/');
+  service.getters = getters; // getters  변경 이력을 추적하기위해 부모까지 포함
   _(keys)
     .filter(function (key) { return regex.test(key); })
     .map(function (key) {
       var property = key.replace(regex, '').split('/').join('.');
-      _.set(service, property, getters[key]);
+      // _.set(service, property, getters[key])
+      Object.defineProperty(service, property, { get: function () { return this.getters[key] } });
     })
     .value();
 }
@@ -83,7 +85,7 @@ function actions(service, self, name) {
     .value();
 }
 
-function mutations$1(service, self, name) {
+function mutations(service, self, name) {
   var mutations = self.$store ? self.$store._mutations : self._mutations;
   var keys = Object.keys(mutations);
   var regex = new RegExp('^' + name + '/');
@@ -120,6 +122,7 @@ function mutations$1(service, self, name) {
 function state(service, self, name) {
   var state = self.$store ? self.$store.state : self.state;
   var key = name.split('/').join('.');
+  service.state = _.get(state, key); // state  변경 이력을 추적하기위해 부모까지 포함
   exportState(state, key, service);
 }
 
@@ -128,7 +131,8 @@ function exportState(state, key, service) {
   _(keys)
     .map(function (prop) {
       if (!_.get(service, prop)) {
-        _.set(service, prop, _.get(state, key + '.' + prop));
+        // _.set(service, prop, _.get(state, key + '.' + prop))
+        Object.defineProperty(service, prop, { get: function () { return this.state[prop] } });
       } else {
         exportState(_.get(state, key), prop, service[prop]);
       }
@@ -137,17 +141,18 @@ function exportState(state, key, service) {
 }
 
 var cache = {};
-
-function Store(name) {
+function Store(name, store) {
   if (cache[name]) {
-    getters(cache[name], this, name);
     return cache[name]
   }
+
+  var ref = this;
+  if (store) { ref = store; }
   var service = {};
-  getters(service, this, name);
-  actions(service, this, name);
-  mutations$1(service, this, name);
-  state(service, this, name);
+  getters(service, ref, name);
+  actions(service, ref, name);
+  mutations(service, ref, name);
+  state(service, ref, name);
   cache[name] = service;
   return service
 }
@@ -176,6 +181,9 @@ function plugin (Vue, options) {
 
 plugin.version = '0.1.0';
 
-return plugin;
+exports['default'] = plugin;
+exports.Store = Store;
+
+Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
