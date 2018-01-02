@@ -5,7 +5,7 @@
 https://unpkg.com/vuex-service/dist/vuex-service
 
 [unpkg.com](https://unpkg.com) provides NPM-based CDN links. The above link will always point to the latest release on NPM. You can also use a specific version/tag via URLs like https://unpkg.com/vuex-service@0.1.0/dist/vuex-service.js
- 
+
 Include vuex-service after Vue and it will install itself automatically:
 
 ```html
@@ -26,8 +26,9 @@ When used with a module system, you must explicitly install the `vuex-service` v
 ```javascript
 import Vue from 'vue'
 import VuexService from 'vuex-service'
+import * as store from '~/store'
 
-Vue.use(VuexService)
+Vue.use(vuexService, {store: store, mutation: true})
 ```
 
 You don't need to do this when using global script tags.

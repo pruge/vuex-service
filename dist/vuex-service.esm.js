@@ -72,8 +72,14 @@ function actions(service, self, name) {
       if (isExist) { throw new Error('duplicate key') }
       var that = self.$store ? self.$store : self;
       _.set(service, property, function (payload, patch) {
-        patch && (payload.__patch = patch);
-        that.dispatch(key, payload);
+        var data = payload;
+        if (patch) {
+          data = {
+            src: payload,
+            patch: patch
+          };
+        }
+        that.dispatch(key, data);
       });
     })
     .value();

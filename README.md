@@ -8,8 +8,197 @@
 A Vue.js Plugin
 
 
-## :book: Documentation
-See [here](http://prugel.github.io/vuex-service/)
+<!-- ## :book: Documentation -->
+<!-- See [here](http://prugel.github.io/vuex-service/) -->
+## Getting Started
+
+### NPM
+
+    $ npm install vuex-service
+
+### Yarn
+
+    $ yarn add vuex-service
+
+When used with a module system, you must explicitly install the `vuex-service` via `Vue.use()`:
+
+```javascript
+import Vue from 'vue'
+import VuexService from 'vuex-service'
+import * as store from '~/store'
+
+Vue.use(vuexService, {store: store, mutation: true})
+```
+
+## options
+1. store: store 객체
+1. mutation: if true, add mutation (add, remove, udpate, set), default: false
+
+## how to use
+
+### store actions에서 사용
+```js
+// ~/store/Todo.js
+export const state = () => ({
+  todos: [],
+  hello: {
+    world: '123'
+  }
+})
+
+export const mutations = {
+  ADD_TODO (state, todo) {
+    state.todos.push(todo)
+  },
+  UPDATE_TODO (state, data) {
+    _.merge(data.src, data.patch)
+  }
+}
+
+export const getters = {
+  all (state) {
+    return state.todos
+  },
+  actives (state) {
+    return state.todos.filter(todo => !todo.completed)
+  },
+  completed (state) {
+    return state.todos.filter(todo => todo.completed)
+  }
+}
+
+export const actions = {
+  add ({ commit }, todo) {
+    const Todo = this.$$store('Todo')
+    // commit('ADD_TODO', todo)
+    Todo.m.add('todos', todo)
+  },
+  update ({ commit }, data) {
+    const Todo = this.$$store('Todo')
+    // commit('UPDATE_TODO', data)
+    Todo.m.update(data.src, data.patch)
+  }
+}
+```
+
+### vue component에서 사용
+```js
+export default {
+  computed: {
+    todos () {
+      const Todo = this.$$store('Todo')
+      const filter = this.$route.params.slug || 'all'
+      // this.$store.getters['Todo/' + filter]
+      return Todo[filter]
+    }
+  },
+  methods: {
+    doneCheck (todo, e) {
+      const Todo = this.$$store('Todo')
+      const data = {src: todo, patch: {completed: e.target.checked}}
+      Todo.update(data) // this.dispatch('update', data)
+      // or
+      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('update', {src: todo, patch: {completed: e.target.checked})
+      // or
+      Todo.m.update(todo, { completed: e.target.checked })
+    },
+  }
+}
+```
+
+### store 객체사용해서
+```js
+// ~/store/Locale.js
+export const state = () => ({
+  locales: ['en', 'kr'],
+  locale: 'en'
+})
+
+// ~/middleware/i18n.js
+import { Store } from 'vue-service'
+export default function ({ isHMR, app, store, route, params, error, redirect }) {
+  const Locale = Store('Locale', store)
+  console.log(Locale.locales, Locale.locale)
+  ...
+}
+```
+
+### 기본 제공 mutations - set, add, remove, update
+```js
+// ~/store/Todo.js
+export const state = () => ({
+  todos: [],
+  hello: {
+    world: '123',
+    heart: []
+  }
+})
+```
+1. set
+```js
+const Todo = this.$$store('Todo')
+// Todo.m.set(prop, value)
+Todo.m.set('todos', [{title: 'todo', completed: false}])
+Todo.m.set('hello.world', 'abc') // abc
+Todo.m.set('hello.heart', ['two', 'three']) // [two, three]
+```
+2. add
+```js
+const Todo = this.$$store('Todo')
+// Todo.m.add(prop, value)
+Todo.m.add('todos', {title: 'todo', completed: false})
+Todo.m.add('hello.heart', 'one') // [one]
+Todo.m.add('hello.heart', ...['two', 'three']) // [one, two, three]
+```
+3. remove
+```js
+const Todo = this.$$store('Todo')
+// Todo.m.remove(prop, value)
+Todo.m.add('todos', {title: 'todo', completed: false})
+const todo = Todo.todos[0]
+Todo.m.remove('todos', todo) // []
+```
+4. update
+```js
+const Todo = this.$$store('Todo')
+// Todo.m.update(prop, value)
+// if prop is string, call m.set(prop, value)
+Todo.m.update('todos', {title: 'todo', completed: false})
+Todo.m.update('hello.heart', 'one') // [one]
+Todo.m.update('hello.heart', ['two', 'three'])  // [two, three]
+// or
+Todo.add('todos', {title: 'hi', completed: false})
+const todo = Todo.todos[0]
+Todo.m.update(todo, {title: 'hello world'}) // 'hi' --> 'hello world'
+```
+
+### action을 호출할 때
+- 2개 파리미터이면 {src: arg1, patch: arg2} 로 자동 구성
+```js
+// ~/store/Todo.js
+export const state = () => ({
+  todos: [],
+  hello: {
+    world: '123',
+    heart: []
+  }
+})
+```
+```js
+// ~/components/list.vue
+export default {
+  methods {
+    doneCheck (todo, e) {
+      const Todo = this.$$store('Todo')
+      const data = {src: todo, patch: {completed: e.target.checked}}
+      Todo.update(data) // this.dispatch('update', data)
+      // or
+      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('update', {src: todo, patch: {completed: e.target.checked})
+    }
+  }
+}
+```
+
 
 ## :scroll: Changelog
 Details changes for each release are documented in the [CHANGELOG.md](https://github.com/prugel/vuex-service/blob/dev/CHANGELOG.md).
