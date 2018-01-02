@@ -217,6 +217,19 @@ export default {
 }
 ```
 
+### module
+```js
+// ~/store   : nuxt
+store
+  ├── Todo
+  │    └── comments.js
+  ├─ Todo.js
+  └─ index.js
+
+const Todo = this.$$store('Todo')
+const Comments = this.$$store('Todo/comments')
+```
+
 
 ## :scroll: Changelog
 Details changes for each release are documented in the [CHANGELOG.md](https://github.com/prugel/vuex-service/blob/dev/CHANGELOG.md).
