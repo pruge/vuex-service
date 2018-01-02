@@ -5,7 +5,16 @@
 [![npm](https://img.shields.io/npm/v/vuex-service.svg)](https://www.npmjs.com/package/vuex-service)
 [![vue2](https://img.shields.io/badge/vue-2.x-brightgreen.svg)](https://vuejs.org/)
 
-A Vue.js Plugin
+Use vuex like angular service
+```js
+const Todo = this.$$store('Todo')
+Todo.todos
+Todo.all
+Todo.actives
+Todo.completed
+Todo.update()
+```
+
 
 
 <!-- ## :book: Documentation -->
