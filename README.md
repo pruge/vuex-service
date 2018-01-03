@@ -34,20 +34,17 @@ When used with a module system, you must explicitly install the `vuex-service` v
 ```javascript
 import Vue from 'vue'
 import VuexService from 'vuex-service'
-import * as store from '~/store'
 
-Vue.use(vuexService, {store: store, mutation: true})
+Vue.use(vuexService)
 ```
-
-## options
-1. store: Vuex Store instance
-1. mutation: if true, add mutations 'add, remove, udpate, set', default: fase
 
 ## how to use
 
 ### store actions
 ```js
 // ~/store/Todo.js
+import { defaultMutations } from 'vuex-service'
+
 export const state = () => ({
   todos: [],
   hello: {
@@ -61,7 +58,8 @@ export const mutations = {
   },
   UPDATE_TODO (state, data) {
     _.merge(data.src, data.value)
-  }
+  },
+  ...defaultMutations // set, add, update, remove
 }
 
 export const getters = {
@@ -118,15 +116,20 @@ export default {
 ### vuex store instance
 ```js
 // ~/store/Locale.js
+import { defaultMutations } from 'vuex-service'
+
 export const state = () => ({
   locales: ['en', 'kr'],
   locale: 'en'
 })
+export const mutations = {
+  ...defaultMutations // set, add, update, remove
+}
 
 // ~/middleware/i18n.js
 import { Store } from 'vue-service'
 export default function ({ isHMR, app, store, route, params, error, redirect }) {
-  const Locale = Store('Locale')
+  const Locale = Store('Locale', store)
   console.log(Locale.locales, Locale.locale)
   ...
 }
@@ -135,6 +138,8 @@ export default function ({ isHMR, app, store, route, params, error, redirect }) 
 ### default mutations - set, add, remove, update
 ```js
 // ~/store/Todo.js
+import { defaultMutations } from 'vuex-service'
+
 export const state = () => ({
   todos: [],
   hello: {
@@ -142,6 +147,9 @@ export const state = () => ({
     heart: []
   }
 })
+export const mutations = {
+  ...defaultMutations // set, add, update, remove
+}
 ```
 1. set (prop, value)
 ```js
@@ -187,6 +195,8 @@ Todo.m.update(todo, {title: 'hello world'}) // 'hi' --> 'hello world'
 - Todo.m.update(arg1, arg2) === this.$store.commit('Todo/update', {src: arg1, prop: arg1, value: arg2})
 ```js
 // ~/store/Todo.js
+import { defaultMutations } from 'vuex-service'
+
 export const state = () => ({
   todos: [],
   hello: {
@@ -194,7 +204,9 @@ export const state = () => ({
     heart: []
   }
 })
-
+export const mutations = {
+  ...defaultMutations // set, add, update, remove
+}
 export const actions = {
   update ({ commit }, data) {
     const Todo = this.$$store('Todo')
