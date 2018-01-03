@@ -8,11 +8,17 @@
 Use vuex like angular service
 ```js
 const Todo = this.$$store('Todo')
+// import { Store } from 'vuex-service'
+// const Todo = Store('Todo', store) // store is vuex store isntance
 Todo.todos
 Todo.all
 Todo.actives
 Todo.completed
 Todo.update()
+Todo.$on('hello.*', fn)
+Todo.$emit('hello.world', data)
+Todo.$once('hello', fn)
+Todo.$broadcast('hello.world', data)
 ```
 
 
@@ -52,16 +58,6 @@ export const state = () => ({
   }
 })
 
-export const mutations = {
-  ADD_TODO (state, todo) {
-    state.todos.push(todo)
-  },
-  UPDATE_TODO (state, data) {
-    _.merge(data.src, data.value)
-  },
-  ...defaultMutations // set, add, update, remove
-}
-
 export const getters = {
   all (state) {
     return state.todos
@@ -72,6 +68,16 @@ export const getters = {
   completed (state) {
     return state.todos.filter(todo => todo.completed)
   }
+}
+
+export const mutations = {
+  ADD_TODO (state, todo) {
+    state.todos.push(todo)
+  },
+  UPDATE_TODO (state, data) {
+    _.merge(data.src, data.value)
+  },
+  ...defaultMutations // set, add, update, remove
 }
 
 export const actions = {
@@ -127,7 +133,7 @@ export const mutations = {
 }
 
 // ~/middleware/i18n.js
-import { Store } from 'vue-service'
+import { Store } from 'vuex-service'
 export default function ({ isHMR, app, store, route, params, error, redirect }) {
   const Locale = Store('Locale', store)
   console.log(Locale.locales, Locale.locale)
@@ -184,7 +190,7 @@ Todo.m.update('todos', {title: 'todo', completed: false})
 Todo.m.update('hello.heart', 'one') // [one]
 Todo.m.update('hello.heart', ['two', 'three'])  // [two, three]
 // or
-Todo.add('todos', {title: 'hi', completed: false})
+Todo.m.add('todos', {title: 'hi', completed: false})
 const todo = Todo.todos[0]
 Todo.m.update(todo, {title: 'hello world'}) // 'hi' --> 'hello world'
 ```
@@ -241,6 +247,29 @@ store
 
 const Todo = this.$$store('Todo')
 const Comments = this.$$store('Todo/comments')
+```
+
+### eventbus
+```js
+const Todo = this.$$store('Todo')
+const Member = this.$$store('Member')
+
+Todo.$on('hello', message => console.log('Todo: ' + message))
+Member.$on('hello', message => console.log('Member: ' + message))
+
+Todo.$emit('hello', 'hi')
+// Todo: hi
+
+Member.$emit('hello', 'hi')
+// Member: hi
+
+Todo.$broadcast('hello', 'hi')
+// Todo: hi
+// Member: hi
+
+Todo.$on('hello.*', message => console.log('Todo * : ' + message))
+Todo.$emit('hello.world', 'hi')
+// Todo * : hi
 ```
 
 

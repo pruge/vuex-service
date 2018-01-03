@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import EventBus from './EventBus'
 
 function getters(service, self, name) {
   const getters = self.$store ? self.$store.getters : self.getters
@@ -114,5 +115,6 @@ export default function Store(name, store) {
   actions(service, ref, name)
   mutations(service, ref, name)
   state(service, ref, name)
+  _.merge(service, EventBus.getInstance(name))
   return service
 }

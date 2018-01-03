@@ -1,10 +1,11 @@
 /*!
- * vuex-service v0.1.4 
+ * vuex-service v0.1.6 
  * (c) 2018 james kim
  * Released under the MIT License.
  */
 import Vuex from 'vuex';
 import _ from 'lodash';
+import Vue from 'vue';
 
 var defaultMutations = {
   set: function set(state, ref) {
@@ -36,6 +37,123 @@ var defaultMutations = {
     _.get(state, prop).splice(_.get(state, prop).indexOf(value), 1);
   }
 };
+
+// reference https://github.com/rubenv/angular-tiny-eventemitter
+var key = '$$tinyEventListeners';
+var EventBus = function EventBus() {
+  this.eventBus = new Vue();
+  this.events = {};
+};
+
+EventBus.prototype.$on = function $on (event, fn) {
+  if (!this[key]) {
+    this[key] = {};
+  }
+
+  var events = this[key];
+  if (!events[event]) {
+    events[event] = [];
+  }
+
+  events[event].push(fn);
+
+  return this
+};
+
+EventBus.prototype.$once = function $once (event, broadEvent, fn) {
+  var self = this;
+  var cb = function () {
+    fn.apply(this, arguments);
+    self.$off(event, cb);
+    self.$off(broadEvent, cb);
+  };
+
+  this.$on(event, cb);
+  this.$on(broadEvent, cb);
+  return this
+};
+
+EventBus.prototype.$off = function $off (event, fn) {
+  if (!this[key] || !this[key][event]) {
+    return this
+  }
+
+  var events = this[key];
+  if (!fn) {
+    delete events[event];
+  } else {
+    var listeners = events[event];
+    var index = listeners.indexOf(fn);
+    if (index > -1) {
+      listeners.splice(index, 1);
+    }
+  }
+  return this
+};
+
+EventBus.prototype.getListeners = function getListeners (event) {
+  var self = this;
+  return Object.keys(self[key])
+    .filter(function (evt) {
+      var regex = new RegExp(evt.replace(/\./g, '\\.').replace(/\*/g, '\.*') + '$');
+      return regex.test(event)
+    })
+    .reduce(function (arr, evt) {
+      return arr.concat(self[key][evt])
+    }, [])
+};
+
+EventBus.prototype.$emit = function $emit (event) {
+  if (!this[key]) {
+    return
+  }
+
+  // Making a copy here to allow `off` in listeners.
+  var listeners = this.getListeners.call(this, event);
+  var params = [].slice.call(arguments, 1);
+  for (var i = 0; i < listeners.length; i++) {
+    listeners[i].apply(null, params);
+  }
+  return this
+};
+
+EventBus.prototype.getInstance = function getInstance (namespace) {
+  var self = this;
+
+  if (this.events[namespace]) {
+    return this.events[namespace]
+  }
+
+  var instance = {
+    $emit: function $emit (event, data) {
+      console.log('$emit', (namespace + "." + event));
+      self.$emit((namespace + "." + event), data);
+    },
+    $broadcast: function $broadcast (event, data) {
+      console.log('$broadcast', ("" + event));
+      self.$emit(("__All__." + event), data);
+    },
+    $on: function $on (event, fn) {
+      console.log('$on', (namespace + "." + event));
+      self.$on((namespace + "." + event), fn);
+      self.$on(("__All__." + event), fn);
+    },
+    $once: function $once (event, fn) {
+      console.log('$once', (namespace + "." + event));
+      self.$once((namespace + "." + event), ("__All__." + event), fn);
+    },
+    $off: function $off (event, fn) {
+      console.log('$off', (namespace + "." + event));
+      self.$off((namespace + "." + event), fn);
+      self.$off(("__All__." + event), fn);
+    }
+  };
+
+  this.events[namespace] = instance;
+  return instance
+};
+
+var EventBus$1 = new EventBus;
 
 function getters(service, self, name) {
   var getters = self.$store ? self.$store.getters : self.getters;
@@ -151,10 +269,11 @@ function Store(name, store) {
   actions(service, ref, name);
   mutations(service, ref, name);
   state(service, ref, name);
+  _.merge(service, EventBus$1.getInstance(name));
   return service
 }
 
-function plugin (Vue, options) {
+function plugin (Vue$$1, options) {
   if ( options === void 0 ) options = {};
 
   // const store = options.store
@@ -166,8 +285,8 @@ function plugin (Vue, options) {
 
   // flgMutation && addMutation(store)
   var key = '$$store';
-  if (!Vue.prototype.hasOwnProperty(key)) {
-    Object.defineProperty(Vue.prototype, key, {
+  if (!Vue$$1.prototype.hasOwnProperty(key)) {
+    Object.defineProperty(Vue$$1.prototype, key, {
       get: function get () {
         return Store
       }
@@ -176,6 +295,6 @@ function plugin (Vue, options) {
   }
 }
 
-plugin.version = '0.1.4';
+plugin.version = '0.1.6';
 
 export { Store, defaultMutations };export default plugin;
