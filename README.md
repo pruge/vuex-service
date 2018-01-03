@@ -39,9 +39,14 @@ When used with a module system, you must explicitly install the `vuex-service` v
 
 ```javascript
 import Vue from 'vue'
-import VuexService from 'vuex-service'
+import { Store, default as vuexService } from 'vuex-service'
 
 Vue.use(vuexService)
+
+export default ({ app, store }, inject) => {
+  inject('$store', Store)
+}
+
 ```
 
 ## how to use
