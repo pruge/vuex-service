@@ -1,16 +1,16 @@
 import Vuex from 'vuex'
-import addMutation from './addMutation'
+import { defaultMutations, default as addMutation } from './addMutation'
 import Store from './makeStoreService'
 
 function plugin (Vue, options = {}) {
-  const store = options.store
-  const flgMutation = options.mutation || false
+  // const store = options.store
+  // const flgMutation = options.mutation || false
 
-  if (!store) {
-    throw new Error('Not defined store')
-  }
+  // if (!store) {
+  //   throw new Error('Not defined store')
+  // }
 
-  flgMutation && addMutation(store)
+  // flgMutation && addMutation(store)
   const key = '$$store'
   if (!Vue.prototype.hasOwnProperty(key)) {
     Object.defineProperty(Vue.prototype, key, {
@@ -25,4 +25,4 @@ function plugin (Vue, options = {}) {
 plugin.version = '__VERSION__'
 
 export default plugin
-export { Store }
+export { Store, defaultMutations }

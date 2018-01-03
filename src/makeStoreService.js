@@ -4,13 +4,14 @@ function getters(service, self, name) {
   const getters = self.$store ? self.$store.getters : self.getters
   const keys = Object.keys(getters)
   const regex = new RegExp('^' + name + '/')
-  service.__getters = getters // getters  변경 이력을 추적하기위해 부모까지 포함
+  // service.__getters = getters // getters  변경 이력을 추적하기위해 부모까지 포함
   _(keys)
     .filter(key => regex.test(key))
     .map(key => {
       const property = key.replace(regex, '').split('/').join('.')
-      // _.set(service, property, getters[key])
-      Object.defineProperty(service, property, { get: function () { return this.__getters[key] } })
+      _.set(service, property, getters[key])
+      // _.set(service, property, service.__getters[key])
+      // Object.defineProperty(service, property, { get: function () { return this.__getters[key] } })
     })
     .value()
 }
@@ -86,7 +87,7 @@ function mutations(service, self, name) {
 function state(service, self, name) {
   const state = self.$store ? self.$store.state : self.state;
   const key = name.split('/').join('.')
-  service.__state = _.get(state, key) // state  변경 이력을 추적하기위해 부모까지 포함
+  // service.__state = _.get(state, key) // state  변경 이력을 추적하기위해 부모까지 포함
   exportState(state, key, service)
 }
 
@@ -95,8 +96,9 @@ function exportState(state, key, service) {
   _(keys)
     .map(function (prop) {
       if (!_.get(service, prop)) {
-        // _.set(service, prop, _.get(state, key + '.' + prop))
-        Object.defineProperty(service, prop, { get: function () { return this.__state[prop] } })
+        _.set(service, prop, _.get(state, key + '.' + prop))
+        // _.set(service, prop, _.get(this.__state, prop))
+        // Object.defineProperty(service, prop, { get: function () { return this.__state[prop] } })
       } else {
         exportState(_.get(state, key), prop, service[prop])
       }
@@ -104,12 +106,7 @@ function exportState(state, key, service) {
     .value();
 }
 
-let cache = {}
 export default function Store(name, store) {
-  if (cache[name]) {
-    return cache[name]
-  }
-
   let ref = this
   if (store) { ref = store }
   let service = {}
@@ -117,6 +114,5 @@ export default function Store(name, store) {
   actions(service, ref, name)
   mutations(service, ref, name)
   state(service, ref, name)
-  cache[name] = service
   return service
 }

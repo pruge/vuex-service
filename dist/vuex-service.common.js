@@ -43,24 +43,18 @@ var defaultMutations = {
   }
 };
 
-function addMutation(store) {
-  _.set(store, 'mutations', _.merge(store.mutations, defaultMutations));
-  if (store.modules) {
-    _.forEach(store.modules, function (module) { return addMutation(module); });
-  }
-}
-
 function getters(service, self, name) {
   var getters = self.$store ? self.$store.getters : self.getters;
   var keys = Object.keys(getters);
   var regex = new RegExp('^' + name + '/');
-  service.__getters = getters; // getters  변경 이력을 추적하기위해 부모까지 포함
+  // service.__getters = getters // getters  변경 이력을 추적하기위해 부모까지 포함
   _(keys)
     .filter(function (key) { return regex.test(key); })
     .map(function (key) {
       var property = key.replace(regex, '').split('/').join('.');
-      // _.set(service, property, getters[key])
-      Object.defineProperty(service, property, { get: function () { return this.__getters[key] } });
+      _.set(service, property, getters[key]);
+      // _.set(service, property, service.__getters[key])
+      // Object.defineProperty(service, property, { get: function () { return this.__getters[key] } })
     })
     .value();
 }
@@ -136,7 +130,7 @@ function mutations(service, self, name) {
 function state(service, self, name) {
   var state = self.$store ? self.$store.state : self.state;
   var key = name.split('/').join('.');
-  service.__state = _.get(state, key); // state  변경 이력을 추적하기위해 부모까지 포함
+  // service.__state = _.get(state, key) // state  변경 이력을 추적하기위해 부모까지 포함
   exportState(state, key, service);
 }
 
@@ -145,8 +139,9 @@ function exportState(state, key, service) {
   _(keys)
     .map(function (prop) {
       if (!_.get(service, prop)) {
-        // _.set(service, prop, _.get(state, key + '.' + prop))
-        Object.defineProperty(service, prop, { get: function () { return this.__state[prop] } });
+        _.set(service, prop, _.get(state, key + '.' + prop));
+        // _.set(service, prop, _.get(this.__state, prop))
+        // Object.defineProperty(service, prop, { get: function () { return this.__state[prop] } })
       } else {
         exportState(_.get(state, key), prop, service[prop]);
       }
@@ -154,12 +149,7 @@ function exportState(state, key, service) {
     .value();
 }
 
-var cache = {};
 function Store(name, store) {
-  if (cache[name]) {
-    return cache[name]
-  }
-
   var ref = this;
   if (store) { ref = store; }
   var service = {};
@@ -167,21 +157,20 @@ function Store(name, store) {
   actions(service, ref, name);
   mutations(service, ref, name);
   state(service, ref, name);
-  cache[name] = service;
   return service
 }
 
 function plugin (Vue, options) {
   if ( options === void 0 ) options = {};
 
-  var store = options.store;
-  var flgMutation = options.mutation || false;
+  // const store = options.store
+  // const flgMutation = options.mutation || false
 
-  if (!store) {
-    throw new Error('Not defined store')
-  }
+  // if (!store) {
+  //   throw new Error('Not defined store')
+  // }
 
-  flgMutation && addMutation(store);
+  // flgMutation && addMutation(store)
   var key = '$$store';
   if (!Vue.prototype.hasOwnProperty(key)) {
     Object.defineProperty(Vue.prototype, key, {
@@ -197,3 +186,4 @@ plugin.version = '0.1.4';
 
 exports['default'] = plugin;
 exports.Store = Store;
+exports.defaultMutations = defaultMutations;

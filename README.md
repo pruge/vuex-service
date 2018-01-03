@@ -126,7 +126,7 @@ export const state = () => ({
 // ~/middleware/i18n.js
 import { Store } from 'vue-service'
 export default function ({ isHMR, app, store, route, params, error, redirect }) {
-  const Locale = Store('Locale', store)
+  const Locale = Store('Locale')
   console.log(Locale.locales, Locale.locale)
   ...
 }

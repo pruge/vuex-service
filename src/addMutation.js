@@ -25,3 +25,5 @@ export default function addMutation(store) {
     _.forEach(store.modules, (module) => addMutation(module))
   }
 }
+
+export { defaultMutations }
