@@ -1,13 +1,13 @@
 {
   "name": "vuex-service",
   "description": "use vuex like angular service",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "author": {
     "name": "james kim",
     "email": "strive1024@gmail.com"
   },
   "bugs": {
-    "url": "https://github.com/prugel/vuex-service/issues"
+    "url": "https://github.com/pruge/vuex-service/issues"
   },
   "devDependencies": {
     "babel-core": "^6.22.1",
@@ -65,13 +65,15 @@
     "dist/vuex-service.common.js",
     "src"
   ],
-  "homepage": "https://github.com/prugel/vuex-service#readme",
+  "homepage": "https://github.com/pruge/vuex-service#readme",
   "main": "dist/vuex-service.common.js",
   "module": "dist/vuex-service.esm.js",
   "unpkg": "dist/vuex-service.js",
   "keywords": [
     "plugin",
     "vue",
+    "vuex",
+    "service",
     "vuejs"
   ],
   "license": "MIT",
@@ -80,7 +82,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/prugel/vuex-service.git"
+    "url": "git+https://github.com/pruge/vuex-service.git"
   },
   "scripts": {
     "build": "node config/build.js",

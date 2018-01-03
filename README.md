@@ -1,6 +1,6 @@
 # vuex-service
 
-[![Coverage Status](https://coveralls.io/repos/github/prugel/vuex-service/badge.svg?branch=dev)](https://coveralls.io/github/prugel/vuex-service?branch=dev)
+[![Coverage Status](https://coveralls.io/repos/github/pruge/vuex-service/badge.svg?branch=dev)](https://coveralls.io/github/pruge/vuex-service?branch=dev)
 
 [![npm](https://img.shields.io/npm/v/vuex-service.svg)](https://www.npmjs.com/package/vuex-service)
 [![vue2](https://img.shields.io/badge/vue-2.x-brightgreen.svg)](https://vuejs.org/)
@@ -10,22 +10,24 @@ Use vuex like angular service
 const Todo = this.$$store('Todo')
 // import { Store } from 'vuex-service'
 // const Todo = Store('Todo', store) // store is vuex store isntance
-Todo.todos
-Todo.all
+Todo.todos // state
+Todo.all // getters
 Todo.actives
 Todo.completed
-Todo.update()
+Todo.update() // actions
+Todo.m.update() // mutations
 Todo.$on('hello.*', fn)
 Todo.$emit('hello.world', data)
 Todo.$once('hello.world', fn)
 Todo.$broadcast('hello.world', data)
-Todo.$off('hello.world')
+Todo.$off('hello.world', fn)
+Todo.$off('hello.world') // remove all
 ```
 
 
 
 <!-- ## :book: Documentation -->
-<!-- See [here](http://prugel.github.io/vuex-service/) -->
+<!-- See [here](http://pruge.github.io/vuex-service/) -->
 ## Getting Started
 
 ### NPM
@@ -203,9 +205,11 @@ Todo.m.update(todo, {title: 'hello world'}) // 'hi' --> 'hello world'
 ```
 
 ### When you call custom action/mutations
-- If two parameters
-- Todo.update(arg1, arg2) === this.$store.dispatch('Todo/update', {src: arg1, prop: arg1, value: arg2})
-- Todo.m.update(arg1, arg2) === this.$store.commit('Todo/update', {src: arg1, prop: arg1, value: arg2})
+```js
+// If two parameters
+Todo.update(arg1, arg2) === this.$store.dispatch('Todo/update', {src: arg1, prop: arg1, value: arg2})
+Todo.m.update(arg1, arg2) === this.$store.commit('Todo/update', {src: arg1, prop: arg1, value: arg2})
+```
 ```js
 // ~/store/Todo.js
 import { defaultMutations } from 'vuex-service'
@@ -281,15 +285,15 @@ Todo.$emit('hello.world', 'hi')
 
 
 ## :scroll: Changelog
-Details changes for each release are documented in the [CHANGELOG.md](https://github.com/prugel/vuex-service/blob/dev/CHANGELOG.md).
+Details changes for each release are documented in the [CHANGELOG.md](https://github.com/pruge/vuex-service/blob/dev/CHANGELOG.md).
 
 
 ## :exclamation: Issues
-Please make sure to read the [Issue Reporting Checklist](https://github.com/prugel/vuex-service/blob/dev/CONTRIBUTING.md#issue-reporting-guidelines) before opening an issue. Issues not conforming to the guidelines may be closed immediately.
+Please make sure to read the [Issue Reporting Checklist](https://github.com/pruge/vuex-service/blob/dev/CONTRIBUTING.md#issue-reporting-guidelines) before opening an issue. Issues not conforming to the guidelines may be closed immediately.
 
 
 ## :muscle: Contribution
-Please make sure to read the [Contributing Guide](https://github.com/prugel/vuex-service/blob/dev/CONTRIBUTING.md) before making a pull request.
+Please make sure to read the [Contributing Guide](https://github.com/pruge/vuex-service/blob/dev/CONTRIBUTING.md) before making a pull request.
 
 ## :copyright: License
 

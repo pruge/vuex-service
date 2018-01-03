@@ -1,5 +1,5 @@
 /*!
- * vuex-service v0.1.6 
+ * vuex-service v0.1.9 
  * (c) 2018 james kim
  * Released under the MIT License.
  */
@@ -164,7 +164,7 @@ var EventBus$1 = new EventBus;
 function getters(service, self, name) {
   var getters = self.$store ? self.$store.getters : self.getters;
   var keys = Object.keys(getters);
-  var regex = new RegExp('^' + name + '/');
+  var regex = name ? new RegExp('^' + name + '/') : new RegExp('');
   // service.__getters = getters // getters  변경 이력을 추적하기위해 부모까지 포함
   _(keys)
     .filter(function (key) { return regex.test(key); })
@@ -180,7 +180,7 @@ function getters(service, self, name) {
 function actions(service, self, name) {
   var actions = self.$store ? self.$store._actions : self._actions;
   var keys = Object.keys(actions);
-  var regex = new RegExp('^' + name + '/');
+  var regex = name ? new RegExp('^' + name + '/') : new RegExp('');
   _(keys)
     .filter(function (key) { return regex.test(key); })
     .map(function (key) {
@@ -206,7 +206,7 @@ function actions(service, self, name) {
 function mutations(service, self, name) {
   var mutations = self.$store ? self.$store._mutations : self._mutations;
   var keys = Object.keys(mutations);
-  var regex = new RegExp('^' + name + '/');
+  var regex = name ? new RegExp('^' + name + '/') : new RegExp('');
   _(keys)
     .filter(function (key) { return regex.test(key); })
     .map(function (key) {
@@ -253,21 +253,25 @@ function state(service, self, name) {
 }
 
 function exportState(state, key, service) {
-  var keys = Object.keys(_.get(state, key));
+  var keys = key ? Object.keys(_.get(state, key)) : Object.keys(state);
   _(keys)
     .map(function (prop) {
       if (!_.get(service, prop)) {
-        _.set(service, prop, _.get(state, key + '.' + prop));
+        var prop2 = key ? (key + "." + prop) : prop;
+        _.set(service, prop, _.get(state, prop2));
         // _.set(service, prop, _.get(this.__state, prop))
         // Object.defineProperty(service, prop, { get: function () { return this.__state[prop] } })
       } else {
-        exportState(_.get(state, key), prop, service[prop]);
+        var state2 = key ? _.get(state, key) : state;
+        exportState(state2, prop, service[prop]);
       }
     })
     .value();
 }
 
 function Store(name, store) {
+  if ( name === void 0 ) name='';
+
   var ref = this;
   if (store) { ref = store; }
   var service = {};
@@ -301,7 +305,7 @@ function plugin (Vue$$1, options) {
   }
 }
 
-plugin.version = '0.1.6';
+plugin.version = '0.1.9';
 
 exports['default'] = plugin;
 exports.Store = Store;

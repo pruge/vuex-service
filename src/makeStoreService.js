@@ -4,7 +4,7 @@ import EventBus from './EventBus'
 function getters(service, self, name) {
   const getters = self.$store ? self.$store.getters : self.getters
   const keys = Object.keys(getters)
-  const regex = new RegExp('^' + name + '/')
+  const regex = name ? new RegExp('^' + name + '/') : new RegExp('')
   // service.__getters = getters // getters  변경 이력을 추적하기위해 부모까지 포함
   _(keys)
     .filter(key => regex.test(key))
@@ -20,7 +20,7 @@ function getters(service, self, name) {
 function actions(service, self, name) {
   const actions = self.$store ? self.$store._actions : self._actions
   const keys = Object.keys(actions)
-  const regex = new RegExp('^' + name + '/')
+  const regex = name ? new RegExp('^' + name + '/') : new RegExp('')
   _(keys)
     .filter(key => regex.test(key))
     .map(key => {
@@ -46,7 +46,7 @@ function actions(service, self, name) {
 function mutations(service, self, name) {
   const mutations = self.$store ? self.$store._mutations : self._mutations
   const keys = Object.keys(mutations)
-  const regex = new RegExp('^' + name + '/')
+  const regex = name ? new RegExp('^' + name + '/') : new RegExp('')
   _(keys)
     .filter(key => regex.test(key))
     .map(key => {
@@ -93,21 +93,23 @@ function state(service, self, name) {
 }
 
 function exportState(state, key, service) {
-  const keys = Object.keys(_.get(state, key));
+  const keys = key ? Object.keys(_.get(state, key)) : Object.keys(state)
   _(keys)
     .map(function (prop) {
       if (!_.get(service, prop)) {
-        _.set(service, prop, _.get(state, key + '.' + prop))
+        const prop2 = key ? `${key}.${prop}` : prop
+        _.set(service, prop, _.get(state, prop2))
         // _.set(service, prop, _.get(this.__state, prop))
         // Object.defineProperty(service, prop, { get: function () { return this.__state[prop] } })
       } else {
-        exportState(_.get(state, key), prop, service[prop])
+        const state2 = key ? _.get(state, key) : state
+        exportState(state2, prop, service[prop])
       }
     })
     .value();
 }
 
-export default function Store(name, store) {
+export default function Store(name='', store) {
   let ref = this
   if (store) { ref = store }
   let service = {}
