@@ -17,8 +17,9 @@ Todo.completed
 Todo.update()
 Todo.$on('hello.*', fn)
 Todo.$emit('hello.world', data)
-Todo.$once('hello', fn)
+Todo.$once('hello.world', fn)
 Todo.$broadcast('hello.world', data)
+Todo.$off('hello.world')
 ```
 
 
@@ -38,15 +39,16 @@ Todo.$broadcast('hello.world', data)
 When used with a module system, you must explicitly install the `vuex-service` via `Vue.use()`:
 
 ```javascript
+// ~/plugins/vuex-service.js
 import Vue from 'vue'
 import { Store, default as vuexService } from 'vuex-service'
 
 Vue.use(vuexService)
 
+// nuxt
 export default ({ app, store }, inject) => {
   inject('$store', Store)
 }
-
 ```
 
 ## how to use
