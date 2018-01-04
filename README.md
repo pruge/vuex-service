@@ -285,8 +285,14 @@ Todo.$emit('hello.world', 'hi')
 
 
 ## :scroll: Changelog
-Details changes for each release are documented in the [CHANGELOG.md](https://github.com/pruge/vuex-service/blob/dev/CHANGELOG.md).
 
+### v0.1.5
+
++ support event bus
+
+### v0.1.0
+
++ support vuex like service
 
 ## :exclamation: Issues
 Please make sure to read the [Issue Reporting Checklist](https://github.com/pruge/vuex-service/blob/dev/CONTRIBUTING.md#issue-reporting-guidelines) before opening an issue. Issues not conforming to the guidelines may be closed immediately.
