@@ -7,7 +7,9 @@
 
 Use vuex like angular service
 ```js
+const Root = this.$$store()
 const Todo = this.$$store('Todo')
+const {Member, Todo} = this.$$store('Todo, Member')
 // import { Store } from 'vuex-service'
 // const Todo = Store('Todo', store) // store is vuex store isntance
 Todo.todos // state
@@ -43,12 +45,12 @@ When used with a module system, you must explicitly install the `vuex-service` v
 ```javascript
 // ~/plugins/vuex-service.js
 import Vue from 'vue'
-import { Store, default as vuexService } from 'vuex-service'
+import vuexService, { Store } from 'vuex-service'
 
 Vue.use(vuexService)
 
 // nuxt
-export default ({ app, store }, inject) => {
+export default ({ app }, inject) => {
   inject('$store', Store)
 }
 ```
@@ -80,24 +82,18 @@ export const getters = {
 }
 
 export const mutations = {
-  ADD_TODO (state, todo) {
-    state.todos.push(todo)
-  },
-  UPDATE_TODO (state, data) {
-    _.merge(data.src, data.value)
-  },
   ...defaultMutations // set, add, update, remove
 }
 
 export const actions = {
   add ({ commit }, todo) {
     const Todo = this.$$store('Todo')
-    // commit('ADD_TODO', todo)
+    // commit('Todo/add', {prop: 'todos', value: todo})
     Todo.m.add('todos', todo)
   },
   update ({ commit }, data) {
     const Todo = this.$$store('Todo')
-    // commit('UPDATE_TODO', data)
+    // commit('Todo/update', data)
     Todo.m.update(data.src, data.value)
   }
 }
@@ -256,14 +252,16 @@ store
   ├─ Todo.js
   └─ index.js
 
+const Root = this.$$store()
 const Todo = this.$$store('Todo')
 const Comments = this.$$store('Todo/comments')
+const { Root, Todo } = this.$$store(' , Todo')
+const { Todo, Comments } = this.$$store('Todo, Todo/comments')
 ```
 
 ### eventbus
 ```js
-const Todo = this.$$store('Todo')
-const Member = this.$$store('Member')
+const { Todo, Member } = this.$$store('Todo, Member')
 
 Todo.$on('hello', message => console.log('Todo: ' + message))
 Member.$on('hello', message => console.log('Member: ' + message))
@@ -283,8 +281,20 @@ Todo.$emit('hello.world', 'hi')
 // Todo * : hi
 ```
 
+### eventbus auto unregister
+Alternatively, you can pass a vue scope as the first parameter to on() or once() and the listener will be automatically unregistered if the vue scope is destroyed.
+```js
+// Passing this will register a this.$on('hook:beforeDestroy) event for you.
+// ~/components/todoList.vue
+Todo.$on(this, 'hello', fn)
+```
+
 
 ## :scroll: Changelog
+
+### v0.1.14
+
++ return propmise mutation/action
 
 ### v0.1.5
 

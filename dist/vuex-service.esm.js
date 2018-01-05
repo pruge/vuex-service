@@ -1,5 +1,5 @@
 /*!
- * vuex-service v0.1.9 
+ * vuex-service v0.1.15 
  * (c) 2018 james kim
  * Released under the MIT License.
  */
@@ -45,7 +45,7 @@ var EventBus = function EventBus() {
   this.events = {};
 };
 
-EventBus.prototype.$on = function $on (event, fn) {
+EventBus.prototype.$on = function $on ($scope, event, fn) {
   if (!this[key]) {
     this[key] = {};
   }
@@ -57,10 +57,19 @@ EventBus.prototype.$on = function $on (event, fn) {
 
   events[event].push(fn);
 
+  if ($scope && $scope.$on) {
+    var self = this;
+    console.log('read to remove');
+    $scope.$on('hook:beforeDestroy', function () {
+      console.log('beforeDestroy hook called in eventbus');
+      self.$off(event, fn);
+    });
+  }
+
   return this
 };
 
-EventBus.prototype.$once = function $once (event, broadEvent, fn) {
+EventBus.prototype.$once = function $once ($scope, event, broadEvent, fn) {
   var self = this;
   var cb = function () {
     fn.apply(this, arguments);
@@ -68,8 +77,8 @@ EventBus.prototype.$once = function $once (event, broadEvent, fn) {
     self.$off(broadEvent, cb);
   };
 
-  this.$on(event, cb);
-  this.$on(broadEvent, cb);
+  this.$on($scope, event, cb);
+  this.$on($scope, broadEvent, cb);
   return this
 };
 
@@ -126,24 +135,34 @@ EventBus.prototype.getInstance = function getInstance (namespace) {
 
   var instance = {
     $emit: function $emit (event, data) {
-      console.log('$emit', (namespace + "." + event));
+      // console.log('$emit', `${namespace}.${event}`)
       self.$emit((namespace + "." + event), data);
     },
     $broadcast: function $broadcast (event, data) {
-      console.log('$broadcast', ("" + event));
+      // console.log('$broadcast', `${event}`)
       self.$emit(("__All__." + event), data);
     },
-    $on: function $on (event, fn) {
-      console.log('$on', (namespace + "." + event));
-      self.$on((namespace + "." + event), fn);
-      self.$on(("__All__." + event), fn);
+    $on: function $on ($scope, event, fn) {
+      if (typeof $scope === 'string') {
+        fn = event;
+        event = $scope;
+        $scope = null;
+      }
+      // console.log('$on', `${namespace}.${event}`)
+      self.$on($scope, (namespace + "." + event), fn);
+      self.$on($scope, ("__All__." + event), fn);
     },
-    $once: function $once (event, fn) {
-      console.log('$once', (namespace + "." + event));
-      self.$once((namespace + "." + event), ("__All__." + event), fn);
+    $once: function $once ($scope, event, fn) {
+      if (typeof $scope === 'string') {
+        fn = event;
+        event = $scope;
+        $scope = null;
+      }
+      // console.log('$once', `${namespace}.${event}`)
+      self.$once($scope, (namespace + "." + event), ("__All__." + event), fn);
     },
     $off: function $off (event, fn) {
-      console.log('$off', (namespace + "." + event));
+      // console.log('$off', `${namespace}.${event}`)
       self.$off((namespace + "." + event), fn);
       self.$off(("__All__." + event), fn);
     }
@@ -191,7 +210,7 @@ function actions(service, self, name) {
             value: value
           };
         }
-        that.dispatch(key, data);
+        return that.dispatch(key, data)
       });
     })
     .value();
@@ -217,23 +236,7 @@ function mutations(service, self, name) {
           data.src = prop;
           data.value = value;
         }
-
-        // if (_.isString(prop) && !_.isUndefined(payload)) {
-        //   // string any
-        //   data.prop = prop
-        //   data.value = payload
-        // } else if (!payload) {
-        //   // any
-        //   data = prop
-        // } else if (_.isObject(prop) && _.isObject(payload)) {
-        //   // obj obj
-        //   data.prop = prop
-        //   data.value = payload
-        // } else {
-        //   throw new Error('Incorrect arguements.')
-        // }
-
-        that.commit(key, data);
+        return that.commit(key, data)
       });
     })
     .value();
@@ -263,18 +266,31 @@ function exportState(state, key, service) {
     .value();
 }
 
+function capitalizeFirstCharacter (str) {
+  return str[0].toUpperCase() + str.substring(1)
+}
+
 function Store(name, store) {
   if ( name === void 0 ) name='';
 
   var ref = this;
   if (store) { ref = store; }
-  var service = {};
-  getters(service, ref, name);
-  actions(service, ref, name);
-  mutations(service, ref, name);
-  state(service, ref, name);
-  _.merge(service, EventBus$1.getInstance(name));
-  return service
+  var names = name.trim().replace(' ', '').split(',');
+  var group = {}, prop;
+  names.forEach(function (name) {
+    var service = {};
+    getters(service, ref, name);
+    actions(service, ref, name);
+    mutations(service, ref, name);
+    state(service, ref, name);
+    _.merge(service, EventBus$1.getInstance(name));
+
+    var regex = /.+\/([-_\w\d]+)$/;
+    prop = (regex.test(name) ? capitalizeFirstCharacter(regex.exec(name)[1]) : name) || 'Root';
+    group[prop] = service;
+  });
+
+  return names.length > 1 ? group : group[prop]
 }
 
 function plugin (Vue$$1, options) {
@@ -299,6 +315,6 @@ function plugin (Vue$$1, options) {
   }
 }
 
-plugin.version = '0.1.9';
+plugin.version = '0.1.15';
 
 export { Store, defaultMutations };export default plugin;

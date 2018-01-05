@@ -37,7 +37,7 @@ function actions(service, self, name) {
             value: value
           }
         }
-        that.dispatch(key, data)
+        return that.dispatch(key, data)
       })
     })
     .value()
@@ -63,23 +63,7 @@ function mutations(service, self, name) {
           data.src = prop;
           data.value = value;
         }
-
-        // if (_.isString(prop) && !_.isUndefined(payload)) {
-        //   // string any
-        //   data.prop = prop
-        //   data.value = payload
-        // } else if (!payload) {
-        //   // any
-        //   data = prop
-        // } else if (_.isObject(prop) && _.isObject(payload)) {
-        //   // obj obj
-        //   data.prop = prop
-        //   data.value = payload
-        // } else {
-        //   throw new Error('Incorrect arguements.')
-        // }
-
-        that.commit(key, data)
+        return that.commit(key, data)
       })
     })
     .value()
@@ -109,14 +93,27 @@ function exportState(state, key, service) {
     .value();
 }
 
+function capitalizeFirstCharacter (str) {
+  return str[0].toUpperCase() + str.substring(1)
+}
+
 export default function Store(name='', store) {
   let ref = this
   if (store) { ref = store }
-  let service = {}
-  getters(service, ref, name)
-  actions(service, ref, name)
-  mutations(service, ref, name)
-  state(service, ref, name)
-  _.merge(service, EventBus.getInstance(name))
-  return service
+  const names = name.trim().replace(' ', '').split(',')
+  let group = {}, prop
+  names.forEach(name => {
+    let service = {}
+    getters(service, ref, name)
+    actions(service, ref, name)
+    mutations(service, ref, name)
+    state(service, ref, name)
+    _.merge(service, EventBus.getInstance(name))
+
+    const regex = /.+\/([-_\w\d]+)$/
+    prop = (regex.test(name) ? capitalizeFirstCharacter(regex.exec(name)[1]) : name) || 'Root'
+    group[prop] = service
+  })
+
+  return names.length > 1 ? group : group[prop]
 }

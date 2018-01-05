@@ -8,7 +8,7 @@ class EventBus {
     this.events = {}
   }
 
-  $on (event, fn) {
+  $on ($scope, event, fn) {
     if (!this[key]) {
       this[key] = {}
     }
@@ -20,10 +20,17 @@ class EventBus {
 
     events[event].push(fn)
 
+    if ($scope && $scope.$on) {
+      const self = this
+      $scope.$on('hook:beforeDestroy', () => {
+        self.$off(event, fn)
+      })
+    }
+
     return this
   }
 
-  $once (event, broadEvent, fn) {
+  $once ($scope, event, broadEvent, fn) {
     const self = this
     const cb = function () {
       fn.apply(this, arguments)
@@ -31,8 +38,8 @@ class EventBus {
       self.$off(broadEvent, cb)
     }
 
-    this.$on(event, cb)
-    this.$on(broadEvent, cb)
+    this.$on($scope, event, cb)
+    this.$on($scope, broadEvent, cb)
     return this
   }
 
@@ -89,24 +96,34 @@ class EventBus {
 
     const instance = {
       $emit (event, data) {
-        console.log('$emit', `${namespace}.${event}`)
+        // console.log('$emit', `${namespace}.${event}`)
         self.$emit(`${namespace}.${event}`, data)
       },
       $broadcast (event, data) {
-        console.log('$broadcast', `${event}`)
+        // console.log('$broadcast', `${event}`)
         self.$emit(`__All__.${event}`, data)
       },
-      $on (event, fn) {
-        console.log('$on', `${namespace}.${event}`)
-        self.$on(`${namespace}.${event}`, fn)
-        self.$on(`__All__.${event}`, fn)
+      $on ($scope, event, fn) {
+        if (typeof $scope === 'string') {
+          fn = event
+          event = $scope
+          $scope = null
+        }
+        // console.log('$on', `${namespace}.${event}`)
+        self.$on($scope, `${namespace}.${event}`, fn)
+        self.$on($scope, `__All__.${event}`, fn)
       },
-      $once (event, fn) {
-        console.log('$once', `${namespace}.${event}`)
-        self.$once(`${namespace}.${event}`, `__All__.${event}`, fn)
+      $once ($scope, event, fn) {
+        if (typeof $scope === 'string') {
+          fn = event
+          event = $scope
+          $scope = null
+        }
+        // console.log('$once', `${namespace}.${event}`)
+        self.$once($scope, `${namespace}.${event}`, `__All__.${event}`, fn)
       },
       $off (event, fn) {
-        console.log('$off', `${namespace}.${event}`)
+        // console.log('$off', `${namespace}.${event}`)
         self.$off(`${namespace}.${event}`, fn)
         self.$off(`__All__.${event}`, fn)
       }
