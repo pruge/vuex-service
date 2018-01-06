@@ -1,10 +1,7 @@
-import Vue from 'vue'
-
 // reference https://github.com/rubenv/angular-tiny-eventemitter
 const key = '$$tinyEventListeners'
 class EventBus {
   constructor() {
-    this.eventBus = new Vue()
     this.events = {}
   }
 

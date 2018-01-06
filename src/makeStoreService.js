@@ -5,14 +5,11 @@ function getters(service, self, name) {
   const getters = self.$store ? self.$store.getters : self.getters
   const keys = Object.keys(getters)
   const regex = name ? new RegExp('^' + name + '/') : new RegExp('')
-  // service.__getters = getters // getters  변경 이력을 추적하기위해 부모까지 포함
   _(keys)
     .filter(key => regex.test(key))
     .map(key => {
       const property = key.replace(regex, '').split('/').join('.')
       _.set(service, property, getters[key])
-      // _.set(service, property, service.__getters[key])
-      // Object.defineProperty(service, property, { get: function () { return this.__getters[key] } })
     })
     .value()
 }
@@ -72,7 +69,6 @@ function mutations(service, self, name) {
 function state(service, self, name) {
   const state = self.$store ? self.$store.state : self.state;
   const key = name.split('/').join('.')
-  // service.__state = _.get(state, key) // state  변경 이력을 추적하기위해 부모까지 포함
   exportState(state, key, service)
 }
 
@@ -83,8 +79,6 @@ function exportState(state, key, service) {
       if (!_.get(service, prop)) {
         const prop2 = key ? `${key}.${prop}` : prop
         _.set(service, prop, _.get(state, prop2))
-        // _.set(service, prop, _.get(this.__state, prop))
-        // Object.defineProperty(service, prop, { get: function () { return this.__state[prop] } })
       } else {
         const state2 = key ? _.get(state, key) : state
         exportState(state2, prop, service[prop])

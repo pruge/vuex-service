@@ -1,53 +1,62 @@
 /*!
- * vuex-service v0.1.15 
+ * vuex-service v0.1.17 
  * (c) 2018 james kim
  * Released under the MIT License.
  */
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('vuex'), require('lodash'), require('vue')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'vuex', 'lodash', 'vue'], factory) :
-  (factory((global.VuexService = global.VuexService || {}),global.Vuex,global._,global.Vue));
-}(this, (function (exports,Vuex,_,Vue) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('vuex'), require('lochain'), require('lodash.set'), require('lodash.get'), require('lodash.merge'), require('lodash.foreach'), require('lodash')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'vuex', 'lochain', 'lodash.set', 'lodash.get', 'lodash.merge', 'lodash.foreach', 'lodash'], factory) :
+  (factory((global.VuexService = global.VuexService || {}),global.Vuex,global.lochain,global.set,global.get$1,global.merge,global.forEach,global._));
+}(this, (function (exports,Vuex,lochain,set,get$1,merge,forEach,_) { 'use strict';
 
 Vuex = 'default' in Vuex ? Vuex['default'] : Vuex;
+set = 'default' in set ? set['default'] : set;
+get$1 = 'default' in get$1 ? get$1['default'] : get$1;
+merge = 'default' in merge ? merge['default'] : merge;
+forEach = 'default' in forEach ? forEach['default'] : forEach;
 _ = 'default' in _ ? _['default'] : _;
-Vue = 'default' in Vue ? Vue['default'] : Vue;
 
+// import _ from 'lodash'
 var defaultMutations = {
-  set: function set(state, ref) {
+  set: function set$1(state, ref) {
     var prop = ref.prop;
     var value = ref.value;
 
-    _.set(state, prop, value);
+    // _.set(state, prop, value)
+    set(state, prop, value);
   },
   add: function add(state, ref) {
     var prop = ref.prop;
     var value = ref.value;
 
-    _.get(state, prop).push(value);
+    // _.get(state, prop).push(value)
+    get$1(state, prop).push(value);
   },
   update: function update(state, ref) {
     var prop = ref.prop;
     var value = ref.value;
 
-    if (_.isString(prop)) {
-      _.set(state, prop, value);
+    // if (_.isString(prop)) {
+    if (typeof prop === 'string') {
+      // _.set(state, prop, value)
+      set(state, prop, value);
     } else {
-      _.merge(prop, value);
+      // _.merge(prop, value)
+      merge(prop, value);
     }
   },
   remove: function remove(state, ref) {
     var prop = ref.prop;
     var value = ref.value;
 
-    _.get(state, prop).splice(_.get(state, prop).indexOf(value), 1);
+    // _.get(state, prop).splice(_.get(state, prop).indexOf(value), 1)
+    get$1(state, prop).splice(get$1(state, prop).indexOf(value), 1);
   }
 };
 
 // reference https://github.com/rubenv/angular-tiny-eventemitter
 var key = '$$tinyEventListeners';
 var EventBus = function EventBus() {
-  this.eventBus = new Vue();
   this.events = {};
 };
 
@@ -65,9 +74,7 @@ EventBus.prototype.$on = function $on ($scope, event, fn) {
 
   if ($scope && $scope.$on) {
     var self = this;
-    console.log('read to remove');
     $scope.$on('hook:beforeDestroy', function () {
-      console.log('beforeDestroy hook called in eventbus');
       self.$off(event, fn);
     });
   }
@@ -184,14 +191,11 @@ function getters(service, self, name) {
   var getters = self.$store ? self.$store.getters : self.getters;
   var keys = Object.keys(getters);
   var regex = name ? new RegExp('^' + name + '/') : new RegExp('');
-  // service.__getters = getters // getters  변경 이력을 추적하기위해 부모까지 포함
   _(keys)
     .filter(function (key) { return regex.test(key); })
     .map(function (key) {
       var property = key.replace(regex, '').split('/').join('.');
       _.set(service, property, getters[key]);
-      // _.set(service, property, service.__getters[key])
-      // Object.defineProperty(service, property, { get: function () { return this.__getters[key] } })
     })
     .value();
 }
@@ -251,7 +255,6 @@ function mutations(service, self, name) {
 function state(service, self, name) {
   var state = self.$store ? self.$store.state : self.state;
   var key = name.split('/').join('.');
-  // service.__state = _.get(state, key) // state  변경 이력을 추적하기위해 부모까지 포함
   exportState(state, key, service);
 }
 
@@ -262,8 +265,6 @@ function exportState(state, key, service) {
       if (!_.get(service, prop)) {
         var prop2 = key ? (key + "." + prop) : prop;
         _.set(service, prop, _.get(state, prop2));
-        // _.set(service, prop, _.get(this.__state, prop))
-        // Object.defineProperty(service, prop, { get: function () { return this.__state[prop] } })
       } else {
         var state2 = key ? _.get(state, key) : state;
         exportState(state2, prop, service[prop]);
@@ -299,7 +300,7 @@ function Store(name, store) {
   return names.length > 1 ? group : group[prop]
 }
 
-function plugin (Vue$$1, options) {
+function plugin (Vue, options) {
   if ( options === void 0 ) options = {};
 
   // const store = options.store
@@ -311,8 +312,8 @@ function plugin (Vue$$1, options) {
 
   // flgMutation && addMutation(store)
   var key = '$$store';
-  if (!Vue$$1.prototype.hasOwnProperty(key)) {
-    Object.defineProperty(Vue$$1.prototype, key, {
+  if (!Vue.prototype.hasOwnProperty(key)) {
+    Object.defineProperty(Vue.prototype, key, {
       get: function get () {
         return Store
       }
@@ -321,7 +322,7 @@ function plugin (Vue$$1, options) {
   }
 }
 
-plugin.version = '0.1.15';
+plugin.version = '0.1.17';
 
 exports['default'] = plugin;
 exports.Store = Store;

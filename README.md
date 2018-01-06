@@ -287,6 +287,7 @@ Alternatively, you can pass a vue scope as the first parameter to on() or once()
 // Passing this will register a this.$on('hook:beforeDestroy) event for you.
 // ~/components/todoList.vue
 Todo.$on(this, 'hello', fn)
+Todo.$once(this, 'hello', fn)
 ```
 
 

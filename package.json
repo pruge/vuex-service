@@ -106,7 +106,13 @@
     "test:unit": "cross-env BABEL_ENV=test karma start config/karma.unit.conf.js"
   },
   "dependencies": {
+    "lochain": "^1.0.0-pre0",
     "lodash": "^4.17.4",
+    "lodash.foreach": "^4.5.0",
+    "lodash.get": "^4.4.2",
+    "lodash.isundefined": "^3.0.1",
+    "lodash.merge": "^4.6.0",
+    "lodash.set": "^4.3.2",
     "vuex": "^3.0.1"
   }
 }
