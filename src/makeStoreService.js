@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import EventBus from './EventBus'
+import hooks from './hooks'
 
 function getters(service, self, name) {
   const getters = self.$store ? self.$store.getters : self.getters
@@ -17,7 +18,7 @@ function getters(service, self, name) {
     .value()
 }
 
-function actions(service, self, name) {
+function actions(service, self, name, prop) {
   const actions = self.$store ? self.$store._actions : self._actions
   const keys = Object.keys(actions)
   const regex = name ? new RegExp('^' + name + '/') : new RegExp('')
@@ -31,7 +32,7 @@ function actions(service, self, name) {
       const isExist = _.get(service, property)
       if (isExist) throw new Error('duplicate key')
       const that = self.$store ? self.$store : self
-      _.set(service, property, function(payload, value) {
+      const fn = function(payload, value) {
         let data
         const args = Array.prototype.slice.call(arguments)
         if (args.length === 1) {
@@ -40,12 +41,16 @@ function actions(service, self, name) {
           data = args
         }
         return that.dispatch(key, data)
-      })
+      }
+      // _.set(service, property, fn)
+      _.set(service, property, hooks.hook(prop, property, fn))
+      _.set(service, 'pre', _.partial(hooks.pre, prop))
+      _.set(service, 'post', _.partial(hooks.post, prop))
     })
     .value()
 }
 
-function mutations(service, self, name) {
+function mutations(service, self, name, prop) {
   const mutations = self.$store ? self.$store._mutations : self._mutations
   const keys = Object.keys(mutations)
   const regex = name ? new RegExp('^' + name + '/') : new RegExp('')
@@ -56,7 +61,7 @@ function mutations(service, self, name) {
       props.splice(props.length - 1, 0, 'm')
       const property = props.join('.')
       const that = self.$store ? self.$store : self
-      _.set(service, property, function(prop, value) {
+      const fn = function(prop, value) {
         let data = {}
         const args = Array.prototype.slice.call(arguments)
         if (args.length === 1) {
@@ -65,7 +70,11 @@ function mutations(service, self, name) {
           data = args
         }
         return that.commit(key, data)
-      })
+      }
+      // _.set(service, property, fn)
+      _.set(service, property, hooks.hook(prop, property, fn))
+      _.set(service, 'pre', _.partial(hooks.pre, prop))
+      _.set(service, 'post', _.partial(hooks.post, prop))
     })
     .value()
 }
@@ -91,10 +100,7 @@ function exportState(state, key, service) {
     .value()
 }
 
-// function capitalizeFirstCharacter(str) {
-//   return str[0].toUpperCase() + str.substring(1)
-// }
-
+let cacheHooks = {}
 export default function Store(name = '', store) {
   let ref = this
   if (store) {
@@ -104,18 +110,18 @@ export default function Store(name = '', store) {
     .trim()
     .replace(' ', '')
     .split(',')
-  let group = {},
-    prop
+  let group = {}
+  let prop
   names.forEach(name => {
-    let service = {}
-    getters(service, ref, name)
-    actions(service, ref, name)
-    mutations(service, ref, name)
-    state(service, ref, name)
-    _.merge(service, EventBus.getInstance(name))
-
     const regex = /.+\/([-_\w\d]+)$/
     prop = (regex.test(name) ? regex.exec(name)[1] : name) || 'Root'
+
+    let service = {}
+    getters(service, ref, name)
+    actions(service, ref, name, prop)
+    mutations(service, ref, name, prop)
+    state(service, ref, name)
+    _.merge(service, EventBus.getInstance(name))
     group[prop] = service
   })
 

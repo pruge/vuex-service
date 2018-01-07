@@ -26,7 +26,7 @@ Todo.$off('hello.world', fn)
 Todo.$off('hello.world') // remove all
 ```
 
-## :exclamation:
+## :exclamation: Multiple arguments
 ```js
 // this.$store.dispatch('Todo/update', arg1)
 Todo.update(arg1)
@@ -38,6 +38,49 @@ Todo.update(arg1, arg2, ...)
 update({ commit }, [ name, name2, ... ]) {
   console.log(name, name2, ...)
 }
+```
+
+## :exclamation: Hook
+Please read the following library for further instructions.
+[https://www.npmjs.com/package/hooks](https://www.npmjs.com/package/hooks)
+```js
+// action this.$store.dispatch('Todo/add', data)
+const Todo = this.$$store('Todo')
+
+Todo.pre('add', next => {
+  console.log('hook pre action', Todo.todos)
+  next()
+})
+Todo.post('add', next => {
+  console.log('hook post action', Todo.todos)
+  next()
+})
+
+Todo.add({title: 'hello', completed: false})
+
+// will print
+// hook pre action []
+// hook post action [{...}]
+
+
+// mutation this.$store.commit('Todo/add', data)
+const Todo = this.$$store('Todo')
+
+Todo.pre('m.add', next => {
+  console.log('hook pre mutation', Todo.todos)
+  next()
+})
+Todo.post('m.add', next => {
+  console.log('hook post mutation', Todo.todos)
+  next()
+})
+
+Todo.m.add('todos', {title: 'hello', completed: false})
+
+// will print
+// hook pre mutation []
+// hook post mutation [{...}]
+
 ```
 
 
