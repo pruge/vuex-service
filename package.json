@@ -1,7 +1,7 @@
 {
   "name": "vuex-service",
   "description": "use vuex like angular service",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": {
     "name": "james kim",
     "email": "strive1024@gmail.com"
