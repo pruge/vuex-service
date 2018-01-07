@@ -8,7 +8,10 @@ function getters(service, self, name) {
   _(keys)
     .filter(key => regex.test(key))
     .map(key => {
-      const property = key.replace(regex, '').split('/').join('.')
+      const property = key
+        .replace(regex, '')
+        .split('/')
+        .join('.')
       _.set(service, property, getters[key])
     })
     .value()
@@ -21,18 +24,20 @@ function actions(service, self, name) {
   _(keys)
     .filter(key => regex.test(key))
     .map(key => {
-      const property = key.replace(regex, '').split('/').join('.')
+      const property = key
+        .replace(regex, '')
+        .split('/')
+        .join('.')
       const isExist = _.get(service, property)
       if (isExist) throw new Error('duplicate key')
       const that = self.$store ? self.$store : self
-      _.set(service, property, (payload, value) => {
-        let data = payload
-        if (!_.isUndefined(value)) {
-          data = {
-            prop: payload,
-            src: payload,
-            value: value
-          }
+      _.set(service, property, function(payload, value) {
+        let data
+        const args = Array.prototype.slice.call(arguments)
+        if (args.length === 1) {
+          data = payload
+        } else {
+          data = args
         }
         return that.dispatch(key, data)
       })
@@ -51,14 +56,13 @@ function mutations(service, self, name) {
       props.splice(props.length - 1, 0, 'm')
       const property = props.join('.')
       const that = self.$store ? self.$store : self
-      _.set(service, property, (prop, value) => {
+      _.set(service, property, function(prop, value) {
         let data = {}
-        if (_.isUndefined(value)) {
-          data = prop;
+        const args = Array.prototype.slice.call(arguments)
+        if (args.length === 1) {
+          data = prop
         } else {
-          data.prop = prop;
-          data.src = prop;
-          data.value = value;
+          data = args
         }
         return that.commit(key, data)
       })
@@ -67,7 +71,7 @@ function mutations(service, self, name) {
 }
 
 function state(service, self, name) {
-  const state = self.$store ? self.$store.state : self.state;
+  const state = self.$store ? self.$store.state : self.state
   const key = name.split('/').join('.')
   exportState(state, key, service)
 }
@@ -75,7 +79,7 @@ function state(service, self, name) {
 function exportState(state, key, service) {
   const keys = key ? Object.keys(_.get(state, key)) : Object.keys(state)
   _(keys)
-    .map(function (prop) {
+    .map(function(prop) {
       if (!_.get(service, prop)) {
         const prop2 = key ? `${key}.${prop}` : prop
         _.set(service, prop, _.get(state, prop2))
@@ -84,18 +88,24 @@ function exportState(state, key, service) {
         exportState(state2, prop, service[prop])
       }
     })
-    .value();
+    .value()
 }
 
-function capitalizeFirstCharacter (str) {
-  return str[0].toUpperCase() + str.substring(1)
-}
+// function capitalizeFirstCharacter(str) {
+//   return str[0].toUpperCase() + str.substring(1)
+// }
 
-export default function Store(name='', store) {
+export default function Store(name = '', store) {
   let ref = this
-  if (store) { ref = store }
-  const names = name.trim().replace(' ', '').split(',')
-  let group = {}, prop
+  if (store) {
+    ref = store
+  }
+  const names = name
+    .trim()
+    .replace(' ', '')
+    .split(',')
+  let group = {},
+    prop
   names.forEach(name => {
     let service = {}
     getters(service, ref, name)
@@ -105,7 +115,7 @@ export default function Store(name='', store) {
     _.merge(service, EventBus.getInstance(name))
 
     const regex = /.+\/([-_\w\d]+)$/
-    prop = (regex.test(name) ? capitalizeFirstCharacter(regex.exec(name)[1]) : name) || 'Root'
+    prop = (regex.test(name) ? regex.exec(name)[1] : name) || 'Root'
     group[prop] = service
   })
 

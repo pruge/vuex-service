@@ -1,5 +1,5 @@
 /*!
- * vuex-service v0.1.17 
+ * vuex-service v0.2.1 
  * (c) 2018 james kim
  * Released under the MIT License.
  */
@@ -10,48 +10,36 @@ Object.defineProperty(exports, '__esModule', { value: true });
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var Vuex = _interopDefault(require('vuex'));
-var lochain = require('lochain');
-var set = _interopDefault(require('lodash.set'));
-var get$1 = _interopDefault(require('lodash.get'));
-var merge = _interopDefault(require('lodash.merge'));
-var forEach = _interopDefault(require('lodash.foreach'));
 var _ = _interopDefault(require('lodash'));
 
-// import _ from 'lodash'
 var defaultMutations = {
-  set: function set$1(state, ref) {
-    var prop = ref.prop;
-    var value = ref.value;
+  set: function set(state, ref) {
+    var prop = ref[0];
+    var value = ref[1];
 
-    // _.set(state, prop, value)
-    set(state, prop, value);
+    _.set(state, prop, value);
   },
   add: function add(state, ref) {
-    var prop = ref.prop;
-    var value = ref.value;
+    var prop = ref[0];
+    var value = ref[1];
 
-    // _.get(state, prop).push(value)
-    get$1(state, prop).push(value);
+    _.get(state, prop).push(value);
   },
   update: function update(state, ref) {
-    var prop = ref.prop;
-    var value = ref.value;
+    var prop = ref[0];
+    var value = ref[1];
 
-    // if (_.isString(prop)) {
-    if (typeof prop === 'string') {
-      // _.set(state, prop, value)
-      set(state, prop, value);
+    if (_.isString(prop)) {
+      _.set(state, prop, value);
     } else {
-      // _.merge(prop, value)
-      merge(prop, value);
+      _.merge(prop, value);
     }
   },
   remove: function remove(state, ref) {
-    var prop = ref.prop;
-    var value = ref.value;
+    var prop = ref[0];
+    var value = ref[1];
 
-    // _.get(state, prop).splice(_.get(state, prop).indexOf(value), 1)
-    get$1(state, prop).splice(get$1(state, prop).indexOf(value), 1);
+    _.get(state, prop).splice(_.get(state, prop).indexOf(value), 1);
   }
 };
 
@@ -85,7 +73,7 @@ EventBus.prototype.$on = function $on ($scope, event, fn) {
 
 EventBus.prototype.$once = function $once ($scope, event, broadEvent, fn) {
   var self = this;
-  var cb = function () {
+  var cb = function() {
     fn.apply(this, arguments);
     self.$off(event, cb);
     self.$off(broadEvent, cb);
@@ -117,11 +105,11 @@ EventBus.prototype.$off = function $off (event, fn) {
 EventBus.prototype.getListeners = function getListeners (event) {
   var self = this;
   return Object.keys(self[key])
-    .filter(function (evt) {
-      var regex = new RegExp(evt.replace(/\./g, '\\.').replace(/\*/g, '\.*') + '$');
+    .filter(function(evt) {
+      var regex = new RegExp(evt.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$');
       return regex.test(event)
     })
-    .reduce(function (arr, evt) {
+    .reduce(function(arr, evt) {
       return arr.concat(self[key][evt])
     }, [])
 };
@@ -148,15 +136,15 @@ EventBus.prototype.getInstance = function getInstance (namespace) {
   }
 
   var instance = {
-    $emit: function $emit (event, data) {
+    $emit: function $emit(event, data) {
       // console.log('$emit', `${namespace}.${event}`)
       self.$emit((namespace + "." + event), data);
     },
-    $broadcast: function $broadcast (event, data) {
+    $broadcast: function $broadcast(event, data) {
       // console.log('$broadcast', `${event}`)
       self.$emit(("__All__." + event), data);
     },
-    $on: function $on ($scope, event, fn) {
+    $on: function $on($scope, event, fn) {
       if (typeof $scope === 'string') {
         fn = event;
         event = $scope;
@@ -166,7 +154,7 @@ EventBus.prototype.getInstance = function getInstance (namespace) {
       self.$on($scope, (namespace + "." + event), fn);
       self.$on($scope, ("__All__." + event), fn);
     },
-    $once: function $once ($scope, event, fn) {
+    $once: function $once($scope, event, fn) {
       if (typeof $scope === 'string') {
         fn = event;
         event = $scope;
@@ -175,7 +163,7 @@ EventBus.prototype.getInstance = function getInstance (namespace) {
       // console.log('$once', `${namespace}.${event}`)
       self.$once($scope, (namespace + "." + event), ("__All__." + event), fn);
     },
-    $off: function $off (event, fn) {
+    $off: function $off(event, fn) {
       // console.log('$off', `${namespace}.${event}`)
       self.$off((namespace + "." + event), fn);
       self.$off(("__All__." + event), fn);
@@ -186,7 +174,7 @@ EventBus.prototype.getInstance = function getInstance (namespace) {
   return instance
 };
 
-var EventBus$1 = new EventBus;
+var EventBus$1 = new EventBus();
 
 function getters(service, self, name) {
   var getters = self.$store ? self.$store.getters : self.getters;
@@ -195,7 +183,10 @@ function getters(service, self, name) {
   _(keys)
     .filter(function (key) { return regex.test(key); })
     .map(function (key) {
-      var property = key.replace(regex, '').split('/').join('.');
+      var property = key
+        .replace(regex, '')
+        .split('/')
+        .join('.');
       _.set(service, property, getters[key]);
     })
     .value();
@@ -208,18 +199,20 @@ function actions(service, self, name) {
   _(keys)
     .filter(function (key) { return regex.test(key); })
     .map(function (key) {
-      var property = key.replace(regex, '').split('/').join('.');
+      var property = key
+        .replace(regex, '')
+        .split('/')
+        .join('.');
       var isExist = _.get(service, property);
       if (isExist) { throw new Error('duplicate key') }
       var that = self.$store ? self.$store : self;
-      _.set(service, property, function (payload, value) {
-        var data = payload;
-        if (!_.isUndefined(value)) {
-          data = {
-            prop: payload,
-            src: payload,
-            value: value
-          };
+      _.set(service, property, function(payload, value) {
+        var data;
+        var args = Array.prototype.slice.call(arguments);
+        if (args.length === 1) {
+          data = payload;
+        } else {
+          data = args;
         }
         return that.dispatch(key, data)
       });
@@ -238,14 +231,13 @@ function mutations(service, self, name) {
       props.splice(props.length - 1, 0, 'm');
       var property = props.join('.');
       var that = self.$store ? self.$store : self;
-      _.set(service, property, function (prop, value) {
+      _.set(service, property, function(prop, value) {
         var data = {};
-        if (_.isUndefined(value)) {
+        var args = Array.prototype.slice.call(arguments);
+        if (args.length === 1) {
           data = prop;
         } else {
-          data.prop = prop;
-          data.src = prop;
-          data.value = value;
+          data = args;
         }
         return that.commit(key, data)
       });
@@ -262,7 +254,7 @@ function state(service, self, name) {
 function exportState(state, key, service) {
   var keys = key ? Object.keys(_.get(state, key)) : Object.keys(state);
   _(keys)
-    .map(function (prop) {
+    .map(function(prop) {
       if (!_.get(service, prop)) {
         var prop2 = key ? (key + "." + prop) : prop;
         _.set(service, prop, _.get(state, prop2));
@@ -274,17 +266,23 @@ function exportState(state, key, service) {
     .value();
 }
 
-function capitalizeFirstCharacter (str) {
-  return str[0].toUpperCase() + str.substring(1)
-}
+// function capitalizeFirstCharacter(str) {
+//   return str[0].toUpperCase() + str.substring(1)
+// }
 
 function Store(name, store) {
-  if ( name === void 0 ) name='';
+  if ( name === void 0 ) name = '';
 
   var ref = this;
-  if (store) { ref = store; }
-  var names = name.trim().replace(' ', '').split(',');
-  var group = {}, prop;
+  if (store) {
+    ref = store;
+  }
+  var names = name
+    .trim()
+    .replace(' ', '')
+    .split(',');
+  var group = {},
+    prop;
   names.forEach(function (name) {
     var service = {};
     getters(service, ref, name);
@@ -294,7 +292,7 @@ function Store(name, store) {
     _.merge(service, EventBus$1.getInstance(name));
 
     var regex = /.+\/([-_\w\d]+)$/;
-    prop = (regex.test(name) ? capitalizeFirstCharacter(regex.exec(name)[1]) : name) || 'Root';
+    prop = (regex.test(name) ? regex.exec(name)[1] : name) || 'Root';
     group[prop] = service;
   });
 
@@ -323,7 +321,7 @@ function plugin (Vue, options) {
   }
 }
 
-plugin.version = '0.1.17';
+plugin.version = '0.2.1';
 
 exports['default'] = plugin;
 exports.Store = Store;

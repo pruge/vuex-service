@@ -26,6 +26,19 @@ Todo.$off('hello.world', fn)
 Todo.$off('hello.world') // remove all
 ```
 
+## :exclamation:
+```js
+// this.$store.dispatch('Todo/update', arg1)
+Todo.update(arg1)
+update({ commit }, name) {
+  console.log(name)
+}
+// this.$store.dispatch('Todo/update', [ arg1, arg2, ... ])
+Todo.update(arg1, arg2, ...)
+update({ commit }, [ name, name2, ... ]) {
+  console.log(name, name2, ...)
+}
+```
 
 
 <!-- ## :book: Documentation -->
@@ -88,13 +101,13 @@ export const mutations = {
 export const actions = {
   add ({ commit }, todo) {
     const Todo = this.$$store('Todo')
-    // commit('Todo/add', {prop: 'todos', value: todo})
+    // commit('Todo/add', [ 'todos', todo ])
     Todo.m.add('todos', todo)
   },
-  update ({ commit }, data) {
+  update ({ commit }, [ todo, patch ]) {
     const Todo = this.$$store('Todo')
-    // commit('Todo/update', data)
-    Todo.m.update(data.src, data.value)
+    // commit('Todo/update', [ todo, patch ])
+    Todo.m.update(todo, patch)
   }
 }
 ```
@@ -113,10 +126,12 @@ export default {
   methods: {
     doneCheck (todo, e) {
       const Todo = this.$$store('Todo')
-      const data = {src: todo, value: {completed: e.target.checked}}
-      Todo.update(data) // this.dispatch('Todo/update', data)
+      const data = [ todo, {completed: e.target.checked} ]
+      // this.dispatch('Todo/update', data)
+      Todo.update(data)
       // or
-      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('Todo/update', {src: todo, value: {completed: e.target.checked})
+      // this.dispatch('Todo/update', [ todo, {completed: e.target.checked} ])
+      Todo.update(todo, {completed: e.target.checked})
       // or
       Todo.m.update(todo, { completed: e.target.checked })
     },
@@ -186,10 +201,10 @@ Todo.m.add('todos', {title: 'todo', completed: false})
 const todo = Todo.todos[0]
 Todo.m.remove('todos', todo) // []
 ```
-4. update (src, value)
+4. update (src, patch)
 ```js
 const Todo = this.$$store('Todo')
-// Todo.m.update(src, value)
+// Todo.m.update(src, patch)
 // if src is string, call m.set(prop, value)
 Todo.m.update('todos', {title: 'todo', completed: false})
 Todo.m.update('hello.heart', 'one') // [one]
@@ -202,9 +217,22 @@ Todo.m.update(todo, {title: 'hello world'}) // 'hi' --> 'hello world'
 
 ### When you call custom action/mutations
 ```js
-// If two parameters
-Todo.update(arg1, arg2) === this.$store.dispatch('Todo/update', {src: arg1, prop: arg1, value: arg2})
-Todo.m.update(arg1, arg2) === this.$store.commit('Todo/update', {src: arg1, prop: arg1, value: arg2})
+// If two parameters and more
+// deprecated
+// Todo.update(arg1, arg2) === this.$store.dispatch('Todo/update', {src: arg1, prop: arg1, value: arg2})
+// Todo.m.update(arg1, arg2) === this.$store.commit('Todo/update', {src: arg1, prop: arg1, value: arg2})
+
+// changed
+// this.$store.dispatch('Todo/update', arg1)
+Todo.update(arg1)
+update({ commit }, name) {
+  console.log(name)
+}
+// this.$store.dispatch('Todo/update', [ arg1, arg2, ... ])
+Todo.update(arg1, arg2, ...)
+update({ commit }, [ name, name2, ... ]) {
+  console.log(name, name2, ...)
+}
 ```
 ```js
 // ~/store/Todo.js
@@ -221,10 +249,10 @@ export const mutations = {
   ...defaultMutations // set, add, update, remove
 }
 export const actions = {
-  update ({ commit }, data) {
+  update ({ commit }, [ todo, patch ]) {
     const Todo = this.$$store('Todo')
-    // commit('UPDATE_TODO', data)
-    Todo.m.update(data.src, data.value)
+    // commit('Todo/update', [ todo, patch ])
+    Todo.m.update(todo, patch)
   }
 }
 ```
@@ -234,10 +262,10 @@ export default {
   methods {
     doneCheck (todo, e) {
       const Todo = this.$$store('Todo')
-      const data = {src: todo, value: {completed: e.target.checked}}
+      const data = [ todo, {completed: e.target.checked} ]
       Todo.update(data) // this.dispatch('Todo/update', data)
       // or
-      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('Todo/update', {src: todo, value: {completed: e.target.checked})
+      Todo.update(todo, {completed: e.target.checked}) // this.dispatch('Todo/update', [ todo, {completed: e.target.checked} ])
     }
   }
 }
@@ -254,9 +282,9 @@ store
 
 const Root = this.$$store()
 const Todo = this.$$store('Todo')
-const Comments = this.$$store('Todo/comments')
+const comments = this.$$store('Todo/comments')
 const { Root, Todo } = this.$$store(' , Todo')
-const { Todo, Comments } = this.$$store('Todo, Todo/comments')
+const { Todo, comments } = this.$$store('Todo, Todo/comments')
 ```
 
 ### eventbus
@@ -292,6 +320,10 @@ Todo.$once(this, 'hello', fn)
 
 
 ## :scroll: Changelog
+
+### v0.2.0
+
++ Change arguments of two or more function arguments
 
 ### v0.1.14
 

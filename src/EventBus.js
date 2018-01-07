@@ -5,7 +5,7 @@ class EventBus {
     this.events = {}
   }
 
-  $on ($scope, event, fn) {
+  $on($scope, event, fn) {
     if (!this[key]) {
       this[key] = {}
     }
@@ -27,9 +27,9 @@ class EventBus {
     return this
   }
 
-  $once ($scope, event, broadEvent, fn) {
+  $once($scope, event, broadEvent, fn) {
     const self = this
-    const cb = function () {
+    const cb = function() {
       fn.apply(this, arguments)
       self.$off(event, cb)
       self.$off(broadEvent, cb)
@@ -61,11 +61,11 @@ class EventBus {
   getListeners(event) {
     const self = this
     return Object.keys(self[key])
-      .filter(function (evt) {
-        const regex = new RegExp(evt.replace(/\./g, '\\.').replace(/\*/g, '\.*') + '$')
+      .filter(function(evt) {
+        const regex = new RegExp(evt.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$')
         return regex.test(event)
       })
-      .reduce(function (arr, evt) {
+      .reduce(function(arr, evt) {
         return arr.concat(self[key][evt])
       }, [])
   }
@@ -92,15 +92,15 @@ class EventBus {
     }
 
     const instance = {
-      $emit (event, data) {
+      $emit(event, data) {
         // console.log('$emit', `${namespace}.${event}`)
         self.$emit(`${namespace}.${event}`, data)
       },
-      $broadcast (event, data) {
+      $broadcast(event, data) {
         // console.log('$broadcast', `${event}`)
         self.$emit(`__All__.${event}`, data)
       },
-      $on ($scope, event, fn) {
+      $on($scope, event, fn) {
         if (typeof $scope === 'string') {
           fn = event
           event = $scope
@@ -110,7 +110,7 @@ class EventBus {
         self.$on($scope, `${namespace}.${event}`, fn)
         self.$on($scope, `__All__.${event}`, fn)
       },
-      $once ($scope, event, fn) {
+      $once($scope, event, fn) {
         if (typeof $scope === 'string') {
           fn = event
           event = $scope
@@ -119,7 +119,7 @@ class EventBus {
         // console.log('$once', `${namespace}.${event}`)
         self.$once($scope, `${namespace}.${event}`, `__All__.${event}`, fn)
       },
-      $off (event, fn) {
+      $off(event, fn) {
         // console.log('$off', `${namespace}.${event}`)
         self.$off(`${namespace}.${event}`, fn)
         self.$off(`__All__.${event}`, fn)
@@ -131,9 +131,4 @@ class EventBus {
   }
 }
 
-export default new EventBus
-
-
-
-
-
+export default new EventBus()
