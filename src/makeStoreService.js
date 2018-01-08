@@ -2,6 +2,20 @@ import _ from 'lodash'
 import EventBus from './EventBus'
 import hooks from './hooks'
 
+function setGetter(service, fnName, getters, field_name) {
+  try {
+    Object.defineProperty(service, fnName, {
+      get: function() {
+        return _.get(getters, field_name)
+        // return getters[field_name]
+      }
+      // set: function(newValue) {
+      //   getters[field_name] = newValue
+      // }
+    })
+  } catch (e) {}
+}
+
 function getters(service, self, name) {
   const getters = self.$store ? self.$store.getters : self.getters
   const keys = Object.keys(getters)
@@ -13,7 +27,9 @@ function getters(service, self, name) {
         .replace(regex, '')
         .split('/')
         .join('.')
-      _.set(service, property, getters[key])
+      // _.set(service, property, getters[key])
+      var fnName = key.replace(/[-_\w\d]+\//, '')
+      setGetter(service, fnName, getters, key)
     })
     .value()
 }
@@ -63,7 +79,11 @@ function actions(service, self, name, prop, isUseHook) {
         _.set(service, 'hook', function(property) {
           checkExistFn(service, prop, property)
           const hooked = _.partial(hooks.hook, prop).apply(this, [].slice.call(arguments))
-          _.set(service, property, hooked)
+          if (_.isObject(hooked)) {
+            _.forEach(hooked, (hook, name) => _.set(service, name, hook))
+          } else {
+            _.set(service, property, hooked)
+          }
         })
         _.set(service, 'pre', function() {
           _.partial(hooks.pre, prop).apply(this, [].slice.call(arguments))
@@ -106,10 +126,12 @@ function mutations(service, self, name, prop, isUseHook) {
         _.set(service, 'hook', function(property) {
           checkExistFn(service, prop, property)
           const hooked = _.partial(hooks.hook, prop).apply(this, [].slice.call(arguments))
-          _.set(service, property, hooked)
+          if (_.isObject(hooked)) {
+            _.forEach(hooked, (hook, name) => _.set(service, name, hook))
+          } else {
+            _.set(service, property, hooked)
+          }
         })
-        // _.set(service, 'pre', _.partial(hooks.pre, prop))
-        // _.set(service, 'post', _.partial(hooks.post, prop))
         _.set(service, 'pre', function() {
           _.partial(hooks.pre, prop).apply(this, [].slice.call(arguments))
           return service
@@ -125,27 +147,67 @@ function mutations(service, self, name, prop, isUseHook) {
     .value()
 }
 
-function state(service, self, name) {
-  const state = self.$store ? self.$store.state : self.state
-  const key = name.split('/').join('.')
-  exportState(state, key, service)
+/**
+ *
+ * @param {*} service - vuexService 객체
+ * @param {*} key - vuex의 모듈 이름
+ * @param {*} prop - vuexService 객체에 할당 할 property name
+ * @param {*} ref - store reference
+ * @param {*} property - 실제 ref에서 참조할 경로
+ */
+function setStateGetter(service, key, prop, ref, property) {
+  const target = key ? _.get(service, key) : service
+  try {
+    Object.defineProperty(target, prop, {
+      get: function() {
+        var state = ref.$store ? ref.$store.state : ref.state
+        return _.get(state, property)
+      },
+      set: function(newValue) {
+        var state = ref.$store ? ref.$store.state : ref.state
+        _.set(state, property, newValue)
+      }
+    })
+  } catch (e) {}
 }
 
-function exportState(state, key, service) {
-  const keys = key ? Object.keys(_.get(state, key)) : Object.keys(state)
+/**
+ *
+ * @param {*} service - vuexService 객체
+ * @param {*} self - store reference
+ * @param {*} name - vuexService의 요청 이름, Todo, '', Todo/comments
+ */
+function state(service, self, name) {
+  const key = name.split('/').join('.')
+  exportState(self, key, '', service)
+}
+
+/**
+ *
+ * @param {*} ref - store reference
+ * @param {*} root - vuex의 모듈 이름
+ * @param {*} key - 하위 vuex의 모듈 이름
+ * @param {*} service - vuexService 객체
+ */
+function exportState(ref, root, key, service) {
+  const state = ref.$store ? ref.$store.state : ref.state
+  const keys = root ? Object.keys(_.get(state, root)) : Object.keys(state)
   _(keys)
-    .map(function(prop) {
-      if (!_.get(service, prop)) {
-        const prop2 = key ? `${key}.${prop}` : prop
-        _.set(service, prop, _.get(state, prop2))
+    .map(function(_key) {
+      if (!_.get(service, _key)) {
+        const prop = `${root}.${_key}`.replace(/^\./, '')
+        // console.log(key, ',', _key, ',', prop)
+        setStateGetter(service, key, _key, ref, prop)
       } else {
-        const state2 = key ? _.get(state, key) : state
-        exportState(state2, prop, service[prop])
+        // console.log('module =', property, ',', key, ',', _key)
+        const prop = `${root}.${_key}`.replace(/^\./, '')
+        exportState(ref, prop, _key, service)
       }
     })
     .value()
 }
 
+let cache = {}
 export default function(options) {
   const isUseHook = options.hook
   return function Store(name = '', store) {
@@ -167,6 +229,11 @@ export default function(options) {
       const regex = /.+\/([-_\w\d]+)$/
       prop = (regex.test(name) ? regex.exec(name)[1] : name) || 'Root'
 
+      if (cache[prop]) {
+        group[prop] = cache[prop]
+        return
+      }
+
       let service = {}
       getters(service, ref, name)
       actions(service, ref, name, prop, isUseHook)
@@ -174,6 +241,7 @@ export default function(options) {
       state(service, ref, name)
       _.merge(service, EventBus.getInstance(name))
       group[prop] = service
+      cache[prop] = service
     })
 
     return names.length > 1 ? group : group[prop]
