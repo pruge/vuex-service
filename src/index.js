@@ -1,9 +1,11 @@
 import Vuex from 'vuex'
 import { defaultMutations, default as addMutation } from './addMutation'
-import Store from './makeStoreService'
+import _Store from './makeStoreService'
 
-function plugin (Vue, options = {}) {
-  // const store = options.store
+let Store
+function plugin(Vue, options = {}) {
+  const hook = options.hook
+  const store = options.store
   // const flgMutation = options.mutation || false
 
   // if (!store) {
@@ -12,9 +14,10 @@ function plugin (Vue, options = {}) {
 
   // flgMutation && addMutation(store)
   const key = '$$store'
+  Store = _Store(options)
   if (!Vue.prototype.hasOwnProperty(key)) {
     Object.defineProperty(Vue.prototype, key, {
-      get () {
+      get() {
         return Store
       }
     })

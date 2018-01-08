@@ -5,7 +5,7 @@
 [![npm](https://img.shields.io/npm/v/vuex-service.svg)](https://www.npmjs.com/package/vuex-service)
 [![vue2](https://img.shields.io/badge/vue-2.x-brightgreen.svg)](https://vuejs.org/)
 
-Use vuex like angular service
+## :exclamation: Use vuex like angular service
 ```js
 const Root = this.$$store()
 const Todo = this.$$store('Todo')
@@ -14,11 +14,17 @@ const {Member, Todo} = this.$$store('Todo, Member')
 // const Todo = Store('Todo', store) // store is vuex store isntance
 Todo.todos // state
 Todo.all // getters
-Todo.actives
+Todo.active
 Todo.completed
 Todo.update() // actions
 Todo.m.update() // mutations
+```
+
+## :exclamation: EventBus
+```js
+const Todo = this.$$store('Todo')
 Todo.$on('hello.*', fn)
+Todo.$on(this, 'hello.*', fn) // auto unregister, when vue component destoryed
 Todo.$emit('hello.world', data)
 Todo.$once('hello.world', fn)
 Todo.$broadcast('hello.world', data)
@@ -41,12 +47,16 @@ update({ commit }, [ name, name2, ... ]) {
 ```
 
 ## :exclamation: Hook
-Please read the following library for further instructions.
+The default setting is off.
+
+Please read the following library for further instructions. <br>
 [https://www.npmjs.com/package/hooks](https://www.npmjs.com/package/hooks)
 ```js
+Vue.use(vuexService, {hook: true})  // default hook = false
+
 // action this.$store.dispatch('Todo/add', data)
 const Todo = this.$$store('Todo')
-
+Todo.hook('add', Todo.add)
 Todo.pre('add', next => {
   console.log('hook pre action', Todo.todos)
   next()
@@ -65,7 +75,7 @@ Todo.add({title: 'hello', completed: false})
 
 // mutation this.$store.commit('Todo/add', data)
 const Todo = this.$$store('Todo')
-
+Todo.hook('m.add', Todo.m.add)
 Todo.pre('m.add', next => {
   console.log('hook pre mutation', Todo.todos)
   next()
@@ -103,7 +113,7 @@ When used with a module system, you must explicitly install the `vuex-service` v
 import Vue from 'vue'
 import vuexService, { Store } from 'vuex-service'
 
-Vue.use(vuexService)
+Vue.use(vuexService, {hook: true})  // default hook = false
 
 // nuxt
 export default ({ app }, inject) => {
@@ -129,7 +139,7 @@ export const getters = {
   all (state) {
     return state.todos
   },
-  actives (state) {
+  active (state) {
     return state.todos.filter(todo => !todo.completed)
   },
   completed (state) {
@@ -364,13 +374,13 @@ Todo.$once(this, 'hello', fn)
 
 ## :scroll: Changelog
 
+### v0.3.0
+
++ add hooks
+
 ### v0.2.0
 
-+ Change arguments of two or more function arguments
-
-### v0.1.14
-
-+ return propmise mutation/action
++ change arguments of two or more function arguments
 
 ### v0.1.5
 

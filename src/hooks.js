@@ -6,6 +6,10 @@ let _pres = {}
 let _posts = {}
 let _hooks = {}
 class HooK {
+  getHook(namespace, name, fn) {
+    var hook = _hooks[namespace]
+    return (hook && hook[name]) || fn
+  }
   /**
    *  Declares a new hook to which you can add pres and posts
    *  @param {String} name of the function
@@ -13,13 +17,13 @@ class HooK {
    *  @param {Function} the error handler callback
    */
   hook(namespace, name, fn, errorCb) {
-    // if (arguments.length === 1 && typeof name === 'object') {
-    //   for (var k in name) {
-    //     // `name` is a hash of hookName->hookFn
-    //     this.hook(k, name[k])
-    //   }
-    //   return
-    // }
+    if (arguments.length === 2 && typeof name === 'object') {
+      for (var k in name) {
+        // `name` is a hash of hookName->hookFn
+        this.hook(namespace, k, name[k])
+      }
+      return
+    }
     var proto = (_hooks[namespace] = _hooks[namespace] || {}),
       $pres = (_pres[namespace] = _pres[namespace] || {}),
       $posts = (_posts[namespace] = _posts[namespace] || {})
@@ -185,7 +189,7 @@ class HooK {
 
   _lazySetupHooks(namespace, proto, methodName, errorCb) {
     if (!proto[methodName]) {
-      throw new Error(`There is no ${namespace}.${methodName} action/mutation function.`)
+      throw new Error(`The hook is not set. ${namespace}.${methodName}`)
     }
     if ('undefined' === typeof proto[methodName].numAsyncPres) {
       this.hook(methodName, proto[methodName], errorCb)

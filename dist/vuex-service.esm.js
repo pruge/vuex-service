@@ -1,5 +1,5 @@
 /*!
- * vuex-service v0.2.2 
+ * vuex-service v0.3.8 
  * (c) 2018 james kim
  * Released under the MIT License.
  */
@@ -13,6 +13,23 @@ var defaultMutations = {
 
     _.set(state, prop, value);
   },
+  // reset(state, prop) {
+  //   const recursiveReset = function(state, prop) {
+  //     const data = _.get(state, prop)
+  //     if (_.isArray(data)) {
+  //       _.set(state, prop, [])
+  //     } else if (_.isString(data)) {
+  //       _.set(state, prop, undefined)
+  //     } else if (_.isBoolean(data)) {
+  //       _.set(state, prop, false)
+  //     } else {
+  //       Object.keys(data).map(function(key) {
+  //         recursiveReset(state, prop + '.' + key)
+  //       })
+  //     }
+  //   }
+  //   recursiveReset(state, prop)
+  // },
   add: function add(state, ref) {
     var prop = ref[0];
     var value = ref[1];
@@ -177,14 +194,26 @@ var _posts = {};
 var _hooks = {};
 var HooK = function HooK () {};
 
+HooK.prototype.getHook = function getHook (namespace, name, fn) {
+  var hook = _hooks[namespace];
+  return (hook && hook[name]) || fn
+};
+/**
+ *Declares a new hook to which you can add pres and posts
+ *@param {String} name of the function
+ *@param {Function} the method
+ *@param {Function} the error handler callback
+ */
 HooK.prototype.hook = function hook (namespace, name, fn, errorCb) {
-  // if (arguments.length === 1 && typeof name === 'object') {
-  // for (var k in name) {
-  //   // `name` is a hash of hookName->hookFn
-  //   this.hook(k, name[k])
-  // }
-  // return
-  // }
+    var this$1 = this;
+
+  if (arguments.length === 2 && typeof name === 'object') {
+    for (var k in name) {
+      // `name` is a hash of hookName->hookFn
+      this$1.hook(namespace, k, name[k]);
+    }
+    return
+  }
   var proto = (_hooks[namespace] = _hooks[namespace] || {}),
     $pres = (_pres[namespace] = _pres[namespace] || {}),
     $posts = (_posts[namespace] = _posts[namespace] || {});
@@ -350,7 +379,7 @@ HooK.prototype.removePre = function removePre (namespace, name, fnToRemove) {
 
 HooK.prototype._lazySetupHooks = function _lazySetupHooks (namespace, proto, methodName, errorCb) {
   if (!proto[methodName]) {
-    throw new Error(("There is no " + namespace + "." + methodName + " action/mutation function."))
+    throw new Error(("The hook is not set. " + namespace + "." + methodName))
   }
   if ('undefined' === typeof proto[methodName].numAsyncPres) {
     this.hook(methodName, proto[methodName], errorCb);
@@ -387,7 +416,23 @@ function getters(service, self, name) {
     .value();
 }
 
-function actions(service, self, name, prop) {
+function checkExistFn(service, prop, property) {
+  if (_.isString(property)) {
+    var isFn = _.get(service, property);
+    if (!isFn) {
+      throw new Error('The function does not exist. ' + prop + '.' + property)
+    }
+  } else {
+    _.forEach(property, function (value, key) {
+      var isFn = _.get(service, key);
+      if (!isFn) {
+        throw new Error('The function does not exist. ' + prop + '.' + key)
+      }
+    });
+  }
+}
+
+function actions(service, self, name, prop, isUseHook) {
   var actions = self.$store ? self.$store._actions : self._actions;
   var keys = Object.keys(actions);
   var regex = name ? new RegExp('^' + name + '/') : new RegExp('');
@@ -411,15 +456,33 @@ function actions(service, self, name, prop) {
         }
         return that.dispatch(key, data)
       };
-      // _.set(service, property, fn)
-      _.set(service, property, hooks.hook(prop, property, fn));
-      _.set(service, 'pre', _.partial(hooks.pre, prop));
-      _.set(service, 'post', _.partial(hooks.post, prop));
+      if (isUseHook) {
+        _.set(service, property, hooks.getHook(prop, property, fn));
+        _.set(service, 'hook', function(property) {
+          checkExistFn(service, prop, property);
+          // var isFn = _.get(service, property)
+          // if (!isFn) {
+          //   throw new Error('The function does not exist. ' + prop + '.' + property)
+          // }
+          var hooked = _.partial(hooks.hook, prop).apply(this, [].slice.call(arguments));
+          _.set(service, property, hooked);
+        });
+        _.set(service, 'pre', function() {
+          _.partial(hooks.pre, prop).apply(this, [].slice.call(arguments));
+          return service
+        });
+        _.set(service, 'post', function() {
+          _.partial(hooks.post, prop).apply(this, [].slice.call(arguments));
+          return service
+        });
+      } else {
+        _.set(service, property, fn);
+      }
     })
     .value();
 }
 
-function mutations(service, self, name, prop) {
+function mutations(service, self, name, prop, isUseHook) {
   var mutations = self.$store ? self.$store._mutations : self._mutations;
   var keys = Object.keys(mutations);
   var regex = name ? new RegExp('^' + name + '/') : new RegExp('');
@@ -440,10 +503,30 @@ function mutations(service, self, name, prop) {
         }
         return that.commit(key, data)
       };
-      // _.set(service, property, fn)
-      _.set(service, property, hooks.hook(prop, property, fn));
-      _.set(service, 'pre', _.partial(hooks.pre, prop));
-      _.set(service, 'post', _.partial(hooks.post, prop));
+      if (isUseHook) {
+        _.set(service, property, hooks.getHook(prop, property, fn));
+        _.set(service, 'hook', function(property) {
+          checkExistFn(service, prop, property);
+          // var isFn = _.get(service, property)
+          // if (!isFn) {
+          //   throw new Error('The function does not exist. ' + prop + '.' + property)
+          // }
+          var hooked = _.partial(hooks.hook, prop).apply(this, [].slice.call(arguments));
+          _.set(service, property, hooked);
+        });
+        // _.set(service, 'pre', _.partial(hooks.pre, prop))
+        // _.set(service, 'post', _.partial(hooks.post, prop))
+        _.set(service, 'pre', function() {
+          _.partial(hooks.pre, prop).apply(this, [].slice.call(arguments));
+          return service
+        });
+        _.set(service, 'post', function() {
+          _.partial(hooks.post, prop).apply(this, [].slice.call(arguments));
+          return service
+        });
+      } else {
+        _.set(service, property, fn);
+      }
     })
     .value();
 }
@@ -469,38 +552,47 @@ function exportState(state, key, service) {
     .value();
 }
 
-function Store(name, store) {
-  if ( name === void 0 ) name = '';
+var _Store = function(options) {
+  var isUseHook = options.hook;
+  return function Store(name, store) {
+    if ( name === void 0 ) name = '';
 
-  var ref = this;
-  if (store) {
-    ref = store;
+    var ref = this;
+    if (!_.isString(name)) {
+      store = name;
+      name = '';
+    }
+    if (store) {
+      ref = store;
+    }
+    var names = name
+      .trim()
+      .replace(' ', '')
+      .split(',');
+    var group = {};
+    var prop;
+    names.forEach(function (name) {
+      var regex = /.+\/([-_\w\d]+)$/;
+      prop = (regex.test(name) ? regex.exec(name)[1] : name) || 'Root';
+
+      var service = {};
+      getters(service, ref, name);
+      actions(service, ref, name, prop, isUseHook);
+      mutations(service, ref, name, prop, isUseHook);
+      state(service, ref, name);
+      _.merge(service, EventBus$1.getInstance(name));
+      group[prop] = service;
+    });
+
+    return names.length > 1 ? group : group[prop]
   }
-  var names = name
-    .trim()
-    .replace(' ', '')
-    .split(',');
-  var group = {};
-  var prop;
-  names.forEach(function (name) {
-    var regex = /.+\/([-_\w\d]+)$/;
-    prop = (regex.test(name) ? regex.exec(name)[1] : name) || 'Root';
+};
 
-    var service = {};
-    getters(service, ref, name);
-    actions(service, ref, name, prop);
-    mutations(service, ref, name, prop);
-    state(service, ref, name);
-    _.merge(service, EventBus$1.getInstance(name));
-    group[prop] = service;
-  });
-
-  return names.length > 1 ? group : group[prop]
-}
-
-function plugin (Vue, options) {
+var Store$1;
+function plugin(Vue, options) {
   if ( options === void 0 ) options = {};
 
+  var hook = options.hook;
   // const store = options.store
   // const flgMutation = options.mutation || false
 
@@ -510,16 +602,17 @@ function plugin (Vue, options) {
 
   // flgMutation && addMutation(store)
   var key = '$$store';
+  Store$1 = _Store(options);
   if (!Vue.prototype.hasOwnProperty(key)) {
     Object.defineProperty(Vue.prototype, key, {
-      get: function get () {
-        return Store
+      get: function get() {
+        return Store$1
       }
     });
-    Vuex.Store.prototype[key] = Store;
+    Vuex.Store.prototype[key] = Store$1;
   }
 }
 
-plugin.version = '0.2.2';
+plugin.version = '0.3.8';
 
-export { Store, defaultMutations };export default plugin;
+export { Store$1 as Store, defaultMutations };export default plugin;
