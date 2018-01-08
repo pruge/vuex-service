@@ -18,11 +18,13 @@ class HooK {
    */
   hook(namespace, name, fn, errorCb) {
     if (arguments.length === 2 && typeof name === 'object') {
+      // throw new Error('Specify one hook at a time.')
+      let hooked = {}
       for (var k in name) {
         // `name` is a hash of hookName->hookFn
-        this.hook(namespace, k, name[k])
+        hooked[k] = this.hook(namespace, k, name[k])
       }
-      return
+      return hooked
     }
     var proto = (_hooks[namespace] = _hooks[namespace] || {}),
       $pres = (_pres[namespace] = _pres[namespace] || {}),

@@ -374,6 +374,10 @@ Todo.$once(this, 'hello', fn)
 
 ## :scroll: Changelog
 
+### v0.3.10
+
++ cache vuexService
+
 ### v0.3.0
 
 + add hooks
